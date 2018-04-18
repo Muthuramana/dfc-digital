@@ -1,13 +1,10 @@
 ﻿using DFC.Digital.Data.Model;
-using DFC.Digital.Repository.SitefinityCMS.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Telerik.Sitefinity.DynamicModules.Model;
 using Telerik.Sitefinity.Model;
 using Telerik.Sitefinity.RelatedData;
-using Telerik.Sitefinity.Taxonomies.Model;
-using Telerik.Sitefinity.Taxonomies.Web;
 
 namespace DFC.Digital.Repository.SitefinityCMS.Modules
 {
@@ -28,13 +25,20 @@ namespace DFC.Digital.Repository.SitefinityCMS.Modules
 
         #endregion Fields
 
-        #region Fields
+        #region Ctor
+
         public JobProfileConverter(IRelatedClassificationsRepository relatedClassificationsRepository)
         {
             this.relatedClassificationsRepository = relatedClassificationsRepository;
         }
 
-        #endregion Fields
+        #endregion Ctor
+
+        public static IQueryable<string> GetRelatedContentUrl(DynamicContent content, string relatedField)
+        {
+            var relatedContent = content.GetRelatedItems<DynamicContent>(relatedField);
+            return relatedContent.Select(x => $"{x.UrlName}");
+        }
 
         public JobProfile ConvertFrom(DynamicContent content)
         {
@@ -70,27 +74,18 @@ namespace DFC.Digital.Repository.SitefinityCMS.Modules
                 jobProfile.SOCCode = socItem.GetValue<Lstring>(nameof(JobProfile.SOCCode));
             }
 
+            jobProfile.WorkingHoursDetails = relatedClassificationsRepository.GetRelatedClassifications(content, nameof(JobProfile.WorkingHoursDetails), nameof(JobProfile.WorkingHoursDetails)).FirstOrDefault();
             jobProfile.WorkingPattern = relatedClassificationsRepository.GetRelatedClassifications(content, nameof(JobProfile.WorkingPattern), nameof(JobProfile.WorkingPattern)).FirstOrDefault();
             jobProfile.WorkingPatternDetails = relatedClassificationsRepository.GetRelatedClassifications(content, nameof(JobProfile.WorkingPatternDetails), nameof(JobProfile.WorkingPatternDetails)).FirstOrDefault();
 
-            jobProfile.RelatedInterests = GetRelatedContentIdAndUrl(content, RelatedInterestsField);
-            jobProfile.RelatedEnablers = GetRelatedContentIdAndUrl(content, RelatedEnablersField);
-            jobProfile.RelatedEntryQualifications = GetRelatedContentIdAndUrl(content, RelatedEntryQualificationsField);
-            jobProfile.RelatedTrainingRoutes = GetRelatedContentIdAndUrl(content, RelatedTrainingRoutesField);
-            jobProfile.RelatedPreferredTaskTypes = GetRelatedContentIdAndUrl(content, RelatedPreferredTaskTypesField);
-            jobProfile.RelatedJobAreas = GetRelatedContentIdAndUrl(content, RelatedJobAreasField);
+            jobProfile.RelatedInterests = GetRelatedContentUrl(content, RelatedInterestsField);
+            jobProfile.RelatedEnablers = GetRelatedContentUrl(content, RelatedEnablersField);
+            jobProfile.RelatedEntryQualifications = GetRelatedContentUrl(content, RelatedEntryQualificationsField);
+            jobProfile.RelatedTrainingRoutes = GetRelatedContentUrl(content, RelatedTrainingRoutesField);
+            jobProfile.RelatedPreferredTaskTypes = GetRelatedContentUrl(content, RelatedPreferredTaskTypesField);
+            jobProfile.RelatedJobAreas = GetRelatedContentUrl(content, RelatedJobAreasField);
 
             return jobProfile;
         }
-
-        public IQueryable<string> GetRelatedContentIdAndUrl(DynamicContent content, string relatedField)
-        {
-            var relatedContent = content.GetRelatedItems<DynamicContent>(relatedField);
-            return relatedContent.Select(x => $"{x.Id}|{x.UrlName}");
-        }
-
-        #region Methods
-
-        #endregion
     }
 }

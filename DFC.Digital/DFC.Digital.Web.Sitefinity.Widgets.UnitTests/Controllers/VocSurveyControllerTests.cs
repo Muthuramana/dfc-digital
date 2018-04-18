@@ -1,31 +1,27 @@
-﻿using DFC.Digital.Core.Utilities;
+﻿using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Service.GovUkNotify.Base;
 using DFC.Digital.Web.Sitefinity.Widgets.Mvc.Controllers;
 using DFC.Digital.Web.Sitefinity.Widgets.Mvc.Models;
 using FakeItEasy;
 using FluentAssertions;
 using System.Collections;
 using System.Collections.Generic;
-using System.Web;
 using System.Web.Mvc;
-using System.Web.Routing;
 using TestStack.FluentMVCTesting;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
+namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests
 {
     public class VocSurveyControllerTests
     {
-
         [Theory]
         [InlineData("test", new object[] { "jpprofile", "clientid" }, new object[] { "", "1665229681.1514888907" }, true)]
         [InlineData("testtest", new object[] { "jpprofile", "clientid" }, new object[] { "", "" }, false)]
         public void IndexSubmitEmailTest(string emailAddress, object key, object value, bool success)
         {
             //Setup the fakes and dummies
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var govUkNotify = A.Fake<IGovUkNotify>(ops => ops.Strict());
             var webAppContext = A.Fake<IWebAppContext>(ops => ops.Strict());
             var emailRequest = new VocSurveyViewModel { EmailAddress = emailAddress };
@@ -66,13 +62,11 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
             }
         }
 
-        [Theory]
-        [InlineData("test")]
-        [InlineData("")]
-        public void IndexUrlNameTest(string urlname)
+        [Fact]
+        public void IndexUrlNameTest()
         {
             //Setup the fakes and dummies
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var govUkNotify = A.Fake<IGovUkNotify>(ops => ops.Strict());
             var fakeWebAppContext = A.Fake<IWebAppContext>(ops => ops.Strict());
 
@@ -84,13 +78,13 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
             {
                 EmailSentText = nameof(VocSurveyController.EmailSentText),
                 EmailNotSentText = nameof(VocSurveyController.EmailNotSentText),
-                DontHaveEmailText = nameof(VocSurveyController.DontHaveEmailText),
+                DoNotHaveEmailText = nameof(VocSurveyController.DoNotHaveEmailText),
                 AgeLimitText = nameof(VocSurveyController.AgeLimitText),
                 FormIntroText = nameof(VocSurveyController.FormIntroText),
             };
 
             // Act
-            var indexMethodCall = vocSurveyController.WithCallTo(c => c.Index(urlname));
+            var indexMethodCall = vocSurveyController.WithCallTo(c => c.Index());
 
             //Assert
             indexMethodCall.ShouldRenderDefaultView();
@@ -101,7 +95,7 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
         public void IndexTest()
         {
             //Setup the fakes and dummies
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var govUkNotify = A.Fake<IGovUkNotify>(ops => ops.Strict());
             var webAppContext = A.Fake<IWebAppContext>(ops => ops.Strict());
 
@@ -120,10 +114,10 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
         [InlineData("user1@user.com", new object[] { "jpprofile", "clientid" }, new object[] { "children's-nurse", "1665229681.1514888907" }, true)]
         [InlineData("user2@user.com", new object[] { "jpprofile", "clientid" }, new object[] { "Unknown", "Unknown" }, true)]
         [InlineData("user2@user.com", new object[] { "jpprofile", "clientid" }, new object[] { "", "" }, false)]
-        public void SendEmailTest(string emailAddress, object key, object value, bool returnVal)
+        public void SendEmailTest(string emailAddress, object key, object value, bool returnValue)
         {
             //Setup the fakes and dummies
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
             var govUkNotifyFake = A.Fake<IGovUkNotify>(ops => ops.Strict());
 
@@ -136,7 +130,7 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
 
             // Set up calls
             A.CallTo(() => webAppContextFake.GetVocCookie(Constants.VocPersonalisationCookieName)).Returns(vocSurveyPersonalisationn);
-            A.CallTo(() => govUkNotifyFake.SubmitEmail(emailAddress, vocSurveyPersonalisationn)).Returns(returnVal);
+            A.CallTo(() => govUkNotifyFake.SubmitEmail(emailAddress, vocSurveyPersonalisationn)).Returns(returnValue);
 
             //Instantiate & Act
             var vocSurveyController = new VocSurveyController(govUkNotifyFake, webAppContextFake, loggerFake);
@@ -145,7 +139,7 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
             var sendEmailMethodCall = vocSurveyController.WithCallTo(c => c.SendEmail(emailAddress));
 
             //Assert
-            sendEmailMethodCall.ShouldReturnJson().ShouldBeEquivalentTo(new JsonResult { Data = returnVal });
+            sendEmailMethodCall.ShouldReturnJson().Should().BeEquivalentTo(new JsonResult { Data = returnValue });
             A.CallTo(() => webAppContextFake.GetVocCookie(Constants.VocPersonalisationCookieName)).MustHaveHappened();
             A.CallTo(() => govUkNotifyFake.SubmitEmail(emailAddress, vocSurveyPersonalisationn)).MustHaveHappened();
         }

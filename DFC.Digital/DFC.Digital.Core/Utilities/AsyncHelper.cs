@@ -1,9 +1,8 @@
-﻿using DFC.Digital.Data.Interfaces;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DFC.Digital.Core.Utilities
+namespace DFC.Digital.Core
 {
     public class AsyncHelper : IAsyncHelper
     {

@@ -2,7 +2,7 @@
 using Autofac.Extras.DynamicProxy2;
 using DFC.Digital.Core.Interceptors;
 
-namespace DFC.Digital.Service.CourseSearchProvider.Config
+namespace DFC.Digital.Service.CourseSearchProvider
 {
     public class CourseSearchProviderAutofacModule : Module
     {
@@ -11,8 +11,9 @@ namespace DFC.Digital.Service.CourseSearchProvider.Config
             base.Load(builder);
 
             builder.RegisterAssemblyTypes(ThisAssembly).AsImplementedInterfaces()
+                .InstancePerLifetimeScope()
                 .EnableInterfaceInterceptors()
-                .InterceptedBy(InstrumentationInterceptor.NAME, ExceptionInterceptor.NAME);
+                .InterceptedBy(InstrumentationInterceptor.Name, ExceptionInterceptor.Name);
         }
     }
 }

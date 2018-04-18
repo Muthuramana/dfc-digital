@@ -1,11 +1,12 @@
-﻿using DFC.Digital.Data.Model;
+﻿using DFC.Digital.AutomationTest.Utilities;
+using DFC.Digital.Data.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TechTalk.SpecFlow;
 
-namespace DFC.Digital.Automation.Test.Utilities
+namespace DFC.Digital.AutomationTest.Utilities
 {
     public static class SpecflowExtensions
     {
@@ -15,23 +16,22 @@ namespace DFC.Digital.Automation.Test.Utilities
             {
                 yield return new JobProfileIndex
                 {
-                    FilterableTitle = item[nameof(JobProfileIndex.Title)].ToLowerInvariant(),
                     Title = item[nameof(JobProfileIndex.Title)],
                     IdentityField = item.GetConditionalData(nameof(JobProfileIndex.IdentityField), item[nameof(JobProfileIndex.Title)].ConvertToKey()),
-                    FilterableAlternativeTitle = item.GetConditionalData(nameof(JobProfileIndex.AlternativeTitle)).ToLowerInvariant(),
-                    AlternativeTitle = item.GetConditionalData(nameof(JobProfileIndex.AlternativeTitle))?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(a => a.Trim()),
-                    Overview = item.GetConditionalData(nameof(JobProfileIndex.Overview)),
-                    JobProfileCategories = item.GetConditionalData(nameof(JobProfileIndex.JobProfileCategories))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    JobProfileSpecialism = item.GetConditionalData(nameof(JobProfileIndex.JobProfileSpecialism))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    HiddenAlternativeTitle = item.GetConditionalData(nameof(JobProfileIndex.HiddenAlternativeTitle))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    SalaryRange = item.GetConditionalData(nameof(JobProfileIndex.SalaryRange)),
-                    JobProfileCategoriesWithUrl = item.GetConditionalData(nameof(JobProfileIndex.JobProfileCategoriesWithUrl))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    Interests = item.GetConditionalData(nameof(JobProfileIndex.Interests))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    Enablers = item.GetConditionalData(nameof(JobProfileIndex.Enablers))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    EntryQualifications = item.GetConditionalData(nameof(JobProfileIndex.EntryQualifications))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    TrainingRoutes = item.GetConditionalData(nameof(JobProfileIndex.TrainingRoutes))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    PreferredTaskTypes = item.GetConditionalData(nameof(JobProfileIndex.PreferredTaskTypes))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
-                    JobAreas = item.GetConditionalData(nameof(JobProfileIndex.JobAreas))?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    AlternativeTitle = item.GetConditionalData(nameof(JobProfileIndex.AlternativeTitle), string.Empty)?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(a => a.Trim()),
+                    Overview = item.GetConditionalData(nameof(JobProfileIndex.Overview), string.Empty),
+                    JobProfileCategories = item.GetConditionalData(nameof(JobProfileIndex.JobProfileCategories), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    JobProfileSpecialism = item.GetConditionalData(nameof(JobProfileIndex.JobProfileSpecialism), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    HiddenAlternativeTitle = item.GetConditionalData(nameof(JobProfileIndex.HiddenAlternativeTitle), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    SalaryStarter = item.GetConditionalData<double>(nameof(JobProfileIndex.SalaryStarter), 0),
+                    SalaryExperienced = item.GetConditionalData<double>(nameof(JobProfileIndex.SalaryExperienced), 0),
+                    JobProfileCategoriesWithUrl = item.GetConditionalData(nameof(JobProfileIndex.JobProfileCategoriesWithUrl), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    Interests = item.GetConditionalData(nameof(JobProfileIndex.Interests), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    Enablers = item.GetConditionalData(nameof(JobProfileIndex.Enablers), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    EntryQualifications = item.GetConditionalData(nameof(JobProfileIndex.EntryQualifications), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    TrainingRoutes = item.GetConditionalData(nameof(JobProfileIndex.TrainingRoutes), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    PreferredTaskTypes = item.GetConditionalData(nameof(JobProfileIndex.PreferredTaskTypes), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries),
+                    JobAreas = item.GetConditionalData(nameof(JobProfileIndex.JobAreas), string.Empty)?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)
                 };
             }
         }
@@ -43,7 +43,6 @@ namespace DFC.Digital.Automation.Test.Utilities
                 yield return new JobProfileIndex
                 {
                     IdentityField = $"{jobTitle.ConvertToKey()}-{id}",
-                    FilterableTitle = jobTitle.ToLowerInvariant(),
                     Title = jobTitle,
                     UrlName = $"{jobTitle.ConvertToKey()}-{id}"
                 };
@@ -52,6 +51,11 @@ namespace DFC.Digital.Automation.Test.Utilities
 
         public static SearchProperties ToSearchProperties(this Table table)
         {
+            if (table == null || table.Rows.Count < 1)
+            {
+                throw new TestException("Empty or null table passed");
+            }
+
             var interests = table.Rows[0]["Interests"];
             var trainingRoutes = table.Rows[0]["TrainingRoutes"];
             var enablers = table.Rows[0]["Enablers"];
@@ -101,6 +105,7 @@ namespace DFC.Digital.Automation.Test.Utilities
             return result;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification ="String is only used for Azure index test")]
         internal static string ConvertToKey(this string rawKey)
         {
             Regex regex = new Regex(@"[ ()']");
@@ -110,9 +115,9 @@ namespace DFC.Digital.Automation.Test.Utilities
             }).TrimEnd('-').ToLowerInvariant();
         }
 
-        private static string GetConditionalData(this TableRow item, string field, string defaultValue = null)
+        private static T GetConditionalData<T>(this TableRow item, string field, T defaultValue)
         {
-            return item.ContainsKey(field) ? item[field] : (defaultValue ?? string.Empty);
+            return item.ContainsKey(field) ? (T)Convert.ChangeType(item[field], typeof(T)) : defaultValue;
         }
     }
 }

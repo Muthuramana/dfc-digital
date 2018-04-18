@@ -37,6 +37,9 @@ bld/
 *.VisualState.xml
 TestResult.xml
 
+# WebTest
+*.webtestresult
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/
@@ -288,5 +291,6 @@ __pycache__/
 *.xsd.cs
 
 #Ignore the libs
-DFC.Digital/Lib
-**/*Feature.cs
+DFC.Digital/lib
+**/*feature.cs
+*.config

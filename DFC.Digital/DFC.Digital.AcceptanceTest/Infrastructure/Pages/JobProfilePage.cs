@@ -3,7 +3,7 @@ using OpenQA.Selenium;
 using System.Linq;
 using TestStack.Seleno.PageObjects;
 
-namespace DFC.Digital.AcceptanceTest.Infrastructure.Pages
+namespace DFC.Digital.AcceptanceTest.Infrastructure
 {
     public class JobProfilePage : SitefinityPage<JobProfileDetailsViewModel>
     {
@@ -21,7 +21,9 @@ namespace DFC.Digital.AcceptanceTest.Infrastructure.Pages
 
         public bool HasSalarySection => Find.OptionalElement(By.Id("Salary")) != null;
 
-        public bool HasWorkingHoursSection => Find.OptionalElement(By.Id("WorkingHoursPatternsAndEnvironment")) != null;
+        public bool HasWorkingHoursSection => Find.OptionalElement(By.Id("WorkingHours")) != null;
+
+        public bool HasWorkingHoursPatternsSection => Find.OptionalElement(By.Id("WorkingHoursPatterns")) != null;
 
         public bool HasCareerPathSection => Find.OptionalElement(By.Id("CareerPathAndProgression")) != null;
 
@@ -29,11 +31,11 @@ namespace DFC.Digital.AcceptanceTest.Infrastructure.Pages
 
         public bool HasNoVacancyText => Find.OptionalElement(By.ClassName("dfc-code-jp-novacancyText")) != null;
 
-        public string NoVacancyText => Find.OptionalElement(By.ClassName("dfc-code-jp-novacancyText")).Text;
+        public string NoVacancyText => Find.OptionalElement(By.ClassName("dfc-code-jp-novacancyText"))?.Text;
 
-        public int VacancyCount => Find.Elements(By.CssSelector("#appGeneric .column-half .opportunity-item")).Count();
+        public int VacancyCount => Find.Elements(By.CssSelector("#appGeneric .opportunity-item")).Count();
 
-        public bool AllVacanciesHaveHyperLinks => Find.Elements(By.CssSelector(".opportunity-item a")) != null && Find.Elements(By.CssSelector(".opportunity-item a")).Any() && !Find.Elements(By.CssSelector(".opportunity-item a")).Any(item => string.IsNullOrWhiteSpace(item.GetAttribute("href")));
+        public bool AllVacanciesHaveHyperlinks => Find.Elements(By.CssSelector(".opportunity-item a")) != null && Find.Elements(By.CssSelector(".opportunity-item a")).Any() && !Find.Elements(By.CssSelector(".opportunity-item a")).Any(item => string.IsNullOrWhiteSpace(item.GetAttribute("href")));
 
         public bool HasJobProfileSearch => Find.OptionalElement(By.ClassName("job-profile-search")) != null;
 
@@ -41,7 +43,7 @@ namespace DFC.Digital.AcceptanceTest.Infrastructure.Pages
 
         public bool HasUsefulLinksSection => Find.OptionalElement(By.ClassName("govuk-related-items")) != null;
 
-        public string ProfilePageHeading => Find.OptionalElement(By.ClassName("heading-xlarge")).Text;
+        public string ProfilePageHeading => Find.OptionalElement(By.ClassName("heading-xlarge"))?.Text;
 
         public string HomeCareersText => Find.Element(By.Id("proposition-name")).Text;
 
@@ -63,7 +65,7 @@ namespace DFC.Digital.AcceptanceTest.Infrastructure.Pages
             link.Click();
         }
 
-        public T ClickBackToHomePageLink<T>()
+        public T ClickBackToHomepageLink<T>()
             where T : UiComponent, new()
         {
             return Navigate.To<T>(By.PartialLinkText("Back to homepage"));
@@ -105,7 +107,7 @@ namespace DFC.Digital.AcceptanceTest.Infrastructure.Pages
         public T ClickFindCourseLink<T>()
             where T : UiComponent, new()
         {
-            var result = Find.Element(By.CssSelector(".dfc-code-jp-FindTrainingCoursesLink a"));
+            var result = Find.Element(By.CssSelector(".dfc-code-jp-NoTrainingCoursesText a"));
             return Navigate.To<T>(result.GetAttribute("href"));
         }
 

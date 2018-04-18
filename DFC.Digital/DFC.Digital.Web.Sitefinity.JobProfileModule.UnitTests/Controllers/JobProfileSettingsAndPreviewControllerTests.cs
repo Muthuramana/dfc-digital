@@ -1,4 +1,5 @@
-﻿using DFC.Digital.Data.Interfaces;
+﻿using DFC.Digital.Core;
+using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using FakeItEasy;
@@ -6,7 +7,7 @@ using FluentAssertions;
 using TestStack.FluentMVCTesting;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
+namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
 {
     public class JobProfileSettingsAndPreviewControllerTests
     {
@@ -17,7 +18,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
         {
             //Setup the fakes and dummies
             var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
 
             // Set up calls
@@ -34,7 +35,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             {
                 indexResult.ShouldRenderDefaultView().WithModel<JobProfileSettingsAndPreviewModel>(vm =>
                 {
-                    vm.DefaultJobProfileUrl.ShouldBeEquivalentTo(jobProfileSettingsAndPreviewController.DefaultJobProfileUrlName);
+                    vm.DefaultJobProfileUrl.Should().BeEquivalentTo(jobProfileSettingsAndPreviewController.DefaultJobProfileUrlName);
                 })
                .AndNoModelErrors();
             }
@@ -42,6 +43,47 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             {
                 indexResult.ShouldReturnEmptyResult();
             }
+        }
+
+        [Theory]
+        [InlineData("something", false, true)]
+        [InlineData("something", true, false)]
+        [InlineData("", false, false)]
+        public void IndexDefaultUrlTest(string urlName, bool isContentAuthoringSite, bool expectation)
+        {
+            //Setup the fakes and dummies
+            var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
+            var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
+
+            // Set up calls
+            A.CallTo(() => webAppContextFake.IsContentAuthoringSite).Returns(isContentAuthoringSite);
+            A.CallTo(() => webAppContextFake.SetVocCookie(Constants.VocPersonalisationCookieName, A<string>._)).DoesNothing();
+
+            //Instantiate & Act
+            var jobProfileSettingsAndPreviewController = new JobProfileSettingsAndPreviewController(repositoryFake, webAppContextFake, loggerFake);
+
+            //Act
+            var indexResult = jobProfileSettingsAndPreviewController.WithCallTo(c => c.Index(urlName));
+
+            //Assert
+            if (expectation)
+            {
+                indexResult.ShouldRenderDefaultView().WithModel<JobProfileSettingsAndPreviewModel>(vm =>
+                    {
+                        vm.ShouldSetVocCookie.Should().Be(expectation);
+                        vm.VocSetPersonalisationCookieNameAndValue.Should().NotBeNullOrWhiteSpace();
+                        vm.VocSetPersonalisationCookieNameAndValue.Should().Contain(urlName);
+                    })
+                    .AndNoModelErrors();
+            }
+
+            if (string.IsNullOrWhiteSpace(urlName) || isContentAuthoringSite)
+            {
+                indexResult.ShouldReturnEmptyResult();
+            }
+
+            A.CallTo(() => webAppContextFake.SetVocCookie(Constants.VocPersonalisationCookieName, A<string>._)).MustNotHaveHappened();
         }
     }
 }

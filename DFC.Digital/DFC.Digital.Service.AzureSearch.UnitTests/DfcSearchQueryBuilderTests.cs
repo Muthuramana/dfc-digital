@@ -2,7 +2,7 @@
 using FluentAssertions;
 using Xunit;
 
-namespace DFC.Digital.Service.AzureSearch.Tests
+namespace DFC.Digital.Service.AzureSearch.UnitTests
 {
     public class DfcSearchQueryBuilderTests
     {
@@ -71,11 +71,11 @@ namespace DFC.Digital.Service.AzureSearch.Tests
         [InlineData("term || nurse", "term nurse", false)]
         [InlineData("term and nurse", "term and nurse", false)]
         [InlineData("(term)", "term", false)]
-        [InlineData("term Children's", "term children's", false)]
-        [InlineData("<term Children's>", "term children's", false)]
+        [InlineData("term Children's", "term Children's", false)]
+        [InlineData("<term Children's>", "term Children's", false)]
         public void RemoveSpecialCharactersFromTheSearchTerm(string searchTerm, string expected, bool shouldUseRaw)
         {
-            SearchProperties properties = shouldUseRaw == true ? new SearchProperties { UseRawSearchTerm = true } : null;
+            SearchProperties properties = shouldUseRaw ? new SearchProperties { UseRawSearchTerm = true } : null;
             var testObject = new DfcSearchQueryBuilder();
             var result = testObject.RemoveSpecialCharactersFromTheSearchTerm(searchTerm, properties);
             result.Should().Be(expected);
@@ -100,8 +100,8 @@ namespace DFC.Digital.Service.AzureSearch.Tests
         [InlineData("term || nurse", "/.*term.*/ term~/.*nurse.*/ nurse~")]
         [InlineData("term and nurse", "/.*term.*/ term~/.*and.*/ and~/.*nurse.*/ nurse~")]
         [InlineData("(term)", "/.*term.*/ term~")]
-        [InlineData("term Children's", "/.*term.*/ term~/.*children's.*/ children's~")]
-        [InlineData("<term Children's>", "/.*term.*/ term~/.*children's.*/ children's~")]
+        [InlineData("term Children's", "/.*term.*/ term~/.*Children's.*/ Children's~")]
+        [InlineData("<term Children's>", "/.*term.*/ term~/.*Children's.*/ Children's~")]
         public void BuiBuildContainPartialSearchTest(string searchTerm, string expected)
         {
             var testObject = new DfcSearchQueryBuilder();

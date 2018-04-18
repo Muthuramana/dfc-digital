@@ -1,4 +1,5 @@
-﻿using DFC.Digital.Data.Model;
+﻿using DFC.Digital.AutomationTest.Utilities;
+using DFC.Digital.Data.Model;
 using FluentAssertions;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,35 +9,7 @@ namespace DFC.Digital.Service.AzureSearch.UnitTests
 {
     public class DfcBuildFilterServiceTests
     {
-        [Theory]
-        [MemberData(nameof(GetPsfTestData))]
-        public void BuildPreSearchFilterOperationsTest(IEnumerable<KeyValuePair<string, int>> countOfFilters, IEnumerable<KeyValuePair<string, PreSearchFilterLogicalOperator>> filterFields, string expectedFilterBy)
-        {
-            var model = new PreSearchFiltersResultsModel
-            {
-                Sections = new List<FilterResultsSection>()
-            };
-
-            foreach (var item in countOfFilters)
-            {
-                var section = new FilterResultsSection
-                {
-                    SectionDataType = item.Key,
-                    Name = item.Key,
-                    Options = GetTestFilterOptions(item).ToList(),
-                    SingleSelectOnly = item.Value == 1,
-                    SingleSelectedValue = item.Value == 1 ? $"{item.Key.ToLowerInvariant()}{item.Value}" : null
-                };
-                model.Sections.Add(section);
-            }
-
-            var testObject = new DfcBuildFilterService();
-            var result = testObject.BuildPreSearchFilters(model, filterFields.ToDictionary(k => k.Key, v => v.Value));
-
-            result.Should().Be(expectedFilterBy);
-        }
-
-        private static IEnumerable<object[]> GetPsfTestData()
+        public static IEnumerable<object[]> GetPsfTestData()
         {
             yield return new object[]
             {
@@ -44,9 +17,9 @@ namespace DFC.Digital.Service.AzureSearch.UnitTests
                 {
                     { nameof(PreSearchFilterType.Interest), 1 },
                     { nameof(PreSearchFilterType.TrainingRoute), 1 },
-                    { nameof(PreSearchFilterType.EntryQualification), 1},
+                    { nameof(PreSearchFilterType.EntryQualification), 1 },
                     { nameof(PreSearchFilterType.Enabler), 1 },
-                    { nameof(PreSearchFilterType.JobArea), 1},
+                    { nameof(PreSearchFilterType.JobArea), 1 },
                     { nameof(PreSearchFilterType.PreferredTaskType), 1 }
                 },
                 new Dictionary<string, PreSearchFilterLogicalOperator>
@@ -66,9 +39,9 @@ namespace DFC.Digital.Service.AzureSearch.UnitTests
                 {
                     { nameof(PreSearchFilterType.Interest), 1 },
                     { nameof(PreSearchFilterType.TrainingRoute), 1 },
-                    { nameof(PreSearchFilterType.EntryQualification), 1},
+                    { nameof(PreSearchFilterType.EntryQualification), 1 },
                     { nameof(PreSearchFilterType.Enabler), 1 },
-                    { nameof(PreSearchFilterType.JobArea), 1},
+                    { nameof(PreSearchFilterType.JobArea), 1 },
                     { nameof(PreSearchFilterType.PreferredTaskType), 1 }
                 },
                 new Dictionary<string, PreSearchFilterLogicalOperator>
@@ -88,9 +61,9 @@ namespace DFC.Digital.Service.AzureSearch.UnitTests
                 {
                     { nameof(PreSearchFilterType.Interest), 1 },
                     { nameof(PreSearchFilterType.TrainingRoute), 1 },
-                    { nameof(PreSearchFilterType.EntryQualification), 1},
+                    { nameof(PreSearchFilterType.EntryQualification), 1 },
                     { nameof(PreSearchFilterType.Enabler), 1 },
-                    { nameof(PreSearchFilterType.JobArea), 1},
+                    { nameof(PreSearchFilterType.JobArea), 1 },
                     { nameof(PreSearchFilterType.PreferredTaskType), 1 }
                 },
                 new Dictionary<string, PreSearchFilterLogicalOperator>
@@ -128,15 +101,48 @@ namespace DFC.Digital.Service.AzureSearch.UnitTests
             };
         }
 
-        private IEnumerable<FilterResultsOption> GetTestFilterOptions(KeyValuePair<string, int> item)
+        [Theory]
+        [MemberData(nameof(GetPsfTestData))]
+        public void BuildPreSearchFilterOperationsTest(IEnumerable<KeyValuePair<string, int>> countOfFilters, IEnumerable<KeyValuePair<string, PreSearchFilterLogicalOperator>> filterFields, string expectedFilterBy)
         {
-            for (int index = 0; index < item.Value; index++)
+            var model = new PreSearchFiltersResultsModel
+            {
+                Sections = new List<FilterResultsSection>()
+            };
+
+            if (countOfFilters == null)
+            {
+                throw new TestException("Count Of Filters passed is null");
+            }
+
+            foreach (var item in countOfFilters)
+            {
+                var section = new FilterResultsSection
+                {
+                    SectionDataType = item.Key,
+                    Name = item.Key,
+                    Options = GetTestFilterOptions(item).ToList(),
+                    SingleSelectOnly = item.Value == 1,
+                    SingleSelectedValue = item.Value == 1 ? $"{item.Key.ToLower()}{item.Value}" : null
+                };
+                model.Sections.Add(section);
+            }
+
+            var testObject = new DfcBuildFilterService();
+            var result = testObject.BuildPreSearchFilters(model, filterFields.ToDictionary(k => k.Key, v => v.Value));
+
+            result.Should().Be(expectedFilterBy);
+        }
+
+        private static IEnumerable<FilterResultsOption> GetTestFilterOptions(KeyValuePair<string, int> item)
+        {
+            for (var index = 0; index < item.Value; index++)
             {
                 yield return new FilterResultsOption
                 {
                     Id = (index + 1).ToString(),
                     IsSelected = true,
-                    OptionKey = $"{item.Key.ToLowerInvariant()}{index + 1}",
+                    OptionKey = $"{item.Key.ToLower()}{index + 1}",
                 };
             }
         }

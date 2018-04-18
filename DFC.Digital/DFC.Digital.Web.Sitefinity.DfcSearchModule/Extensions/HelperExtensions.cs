@@ -1,4 +1,5 @@
-﻿using DFC.Digital.Data.Interfaces;
+﻿using DFC.Digital.Core;
+using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
 using System;
 using System.Collections.Generic;
@@ -6,22 +7,22 @@ using System.Linq;
 using System.Threading.Tasks;
 using Telerik.Sitefinity.Services.Search.Data;
 
-namespace DFC.Digital.Web.Sitefinity.DfcSearchModule.Extensions
+namespace DFC.Digital.Web.Sitefinity.DfcSearchModule
 {
     internal static class HelperExtensions
     {
         internal static IEnumerable<JobProfileIndex> ConvertToJobProfileIndex(this IEnumerable<IDocument> documents, IJobProfileIndexEnhancer jobProfileIndexEnhancer, IAsyncHelper asyncHelper)
         {
             List<JobProfileIndex> indexes = new List<JobProfileIndex>();
+            List<Task> salaryPopulation = new List<Task>();
             foreach (var item in documents)
             {
-                var jobProfile = new JobProfileIndex
+                //TODO: Check and confirm that the removed FilterableTitle and FilterableAlternativeTitle are no longer used.
+                var jobProfileIndex = new JobProfileIndex
                 {
                     IdentityField = item.IdentityField.Value?.ToString(),
                     UrlName = item.GetValue(nameof(JobProfileIndex.UrlName))?.ToString(),
-                    FilterableTitle = item.GetValue(nameof(JobProfileIndex.Title))?.ToString().ToLowerInvariant(),
                     Title = item.GetValue(nameof(JobProfileIndex.Title))?.ToString(),
-                    FilterableAlternativeTitle = item.GetValue(nameof(JobProfileIndex.AlternativeTitle))?.ToString().ToLowerInvariant(),
                     AlternativeTitle = item.GetValue(nameof(JobProfileIndex.AlternativeTitle))?.ToString().Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(a => a.Trim()),
                     Overview = item.GetValue(nameof(JobProfileIndex.Overview))?.ToString(),
                     JobProfileCategories = item.GetValue(nameof(JobProfileIndex.JobProfileCategories)) as IEnumerable<string>,
@@ -29,11 +30,13 @@ namespace DFC.Digital.Web.Sitefinity.DfcSearchModule.Extensions
                     HiddenAlternativeTitle = item.GetValue(nameof(JobProfileIndex.HiddenAlternativeTitle)) as IEnumerable<string>
                 };
 
-                jobProfileIndexEnhancer.Initialise(jobProfile);
-                jobProfile.SalaryRange = asyncHelper.Synchronise(() => jobProfileIndexEnhancer.GetSalaryRangeAsync());
-                jobProfile = jobProfileIndexEnhancer.GetRelatedFieldsWithUrl(jobProfile);
-                indexes.Add(jobProfile);
+                jobProfileIndexEnhancer.Initialise(jobProfileIndex, documents.Count() == 1);
+                jobProfileIndexEnhancer.PopulateRelatedFieldsWithUrl();
+                salaryPopulation.Add(jobProfileIndexEnhancer.PopulateSalary());
+                indexes.Add(jobProfileIndex);
             }
+
+            asyncHelper.Synchronise(() => Task.WhenAll(salaryPopulation));
 
             return indexes;
         }

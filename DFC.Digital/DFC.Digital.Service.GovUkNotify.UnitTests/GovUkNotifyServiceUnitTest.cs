@@ -1,18 +1,16 @@
-﻿using DFC.Digital.Service.GovUkNotify;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using DFC.Digital.Data.Interfaces;
+using DFC.Digital.Core;
 using DFC.Digital.Data.Model;
 using FakeItEasy;
 using FluentAssertions;
 using Xunit;
 using Notify.Exceptions;
 using System;
-using DFC.Digital.Core.Utilities;
 
 namespace DFC.Digital.Service.GovUkNotify.UnitTests
 {
-    using System.Linq;
+    using System.Threading.Tasks;
 
     public class GovUkNotifyServiceUnitTest
     {
@@ -80,7 +78,50 @@ namespace DFC.Digital.Service.GovUkNotify.UnitTests
             var result = govUkNotifyService.Convert(input);
 
             // Assert
-            result.ShouldAllBeEquivalentTo(expectation);
+            result.Should().BeEquivalentTo(expectation);
         }
+
+        [Theory]
+        [InlineData("1", ServiceState.Green)]
+        [InlineData(null, ServiceState.Amber)]
+        public async Task GetServiceStatusAsync(string responseId, ServiceState expectedServiceStatus)
+        {
+            //Fakes
+            var emailResponse = responseId == null ? null : new Notify.Models.Responses.EmailNotificationResponse
+            {
+                id = responseId
+            };
+
+            A.CallTo(() => fakeGovUkNotifyClient.SendEmail(A<string>._, A<string>._, A<string>._, A<Dictionary<string, dynamic>>._)).Returns(emailResponse);
+
+            //Act
+            var govUkNotifyService = new GovUkNotifyService(fakeApplicationLogger, fakeGovUkNotifyClient);
+            var serviceStatus = await  govUkNotifyService.GetCurrentStatusAsync();
+
+            //Assert
+            serviceStatus.Status.Should().Be(expectedServiceStatus);
+        }
+
+        [Fact]
+        public async Task GetServiceStatusExceptionAsync()
+        {
+          
+            //Fake set up incorrectly to cause exception
+            A.CallTo(() => fakeGovUkNotifyClient.SendEmail(A<string>._, A<string>._, A<string>._, A<Dictionary<string, dynamic>>._)).Throws<NotifyClientException>();
+           
+            A.CallTo(() => fakeApplicationLogger.LogExceptionWithActivityId(A<string>._, A<Exception>._)).Returns("Exception logged");
+
+            
+            //Act
+            var govUkNotifyService = new GovUkNotifyService(fakeApplicationLogger, fakeGovUkNotifyClient);
+            var serviceStatus = await govUkNotifyService.GetCurrentStatusAsync();
+           
+
+            //Asserts
+            serviceStatus.Status.Should().NotBe(ServiceState.Green);
+            serviceStatus.Notes.Should().Contain("Exception");
+          
+        }
+
     }
 }

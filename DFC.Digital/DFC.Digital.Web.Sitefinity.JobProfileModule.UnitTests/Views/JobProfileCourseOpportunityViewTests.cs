@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Views
+namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
 {
     public class JobProfileCourseOpportunityViewTests
     {
@@ -19,7 +19,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Views
         [InlineData(1)]
         [InlineData(4)]
         [InlineData(0)]
-        public void DFC_1508_TrainingCourseFieldsCorrectTest(int coursesCount)
+        public void DFC1508ForTrainingCourseFieldsCorrectTest(int coursesCount)
         {
             //Arrange
             var index = new _MVC_Views_JobProfileCourseOpportunity_Index_cshtml();
@@ -31,12 +31,15 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Views
             //Assert
             GetCoursesSectionTitleDetailsText(htmlDom).Should().Contain(jobProfileApprenticeViewModel.CoursesSectionTitle);
             GetCoursesSectionTitleDetailsText(htmlDom).Should().Contain(jobProfileApprenticeViewModel.CoursesLocationDetails);
-            GetFindTrainingCoursesLink(htmlDom).Should().Be(jobProfileApprenticeViewModel.FindTrainingCoursesLink);
-            GetFindTrainingCoursesText(htmlDom).Should().Be(jobProfileApprenticeViewModel.FindTrainingCoursesText);
-            GetFindTrainingCourses(htmlDom).ShouldBeEquivalentTo(jobProfileApprenticeViewModel.Courses);
+            GetFindTrainingCourses(htmlDom).Should().BeEquivalentTo(jobProfileApprenticeViewModel.Courses);
+
             if (coursesCount == 0)
             {
                 GetNoTrainingCoursesText(htmlDom).Should().Be(jobProfileApprenticeViewModel.NoTrainingCoursesText);
+            }
+            else
+            {
+                GetTrainingCoursesText(htmlDom).Should().Be(jobProfileApprenticeViewModel.TrainingCoursesText);
             }
         }
 
@@ -46,9 +49,8 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Views
             {
                 MainSectionTitle = "7. Current Opportunities",
                 CoursesSectionTitle = nameof(JobProfileCourseSearchViewModel.CoursesSectionTitle),
-                FindTrainingCoursesText = nameof(JobProfileCourseSearchViewModel.FindTrainingCoursesText),
+                TrainingCoursesText = nameof(JobProfileCourseSearchViewModel.TrainingCoursesText),
                 NoTrainingCoursesText = nameof(JobProfileCourseSearchViewModel.NoTrainingCoursesText),
-                FindTrainingCoursesLink = nameof(JobProfileCourseSearchViewModel.FindTrainingCoursesLink),
                 CoursesLocationDetails = nameof(JobProfileCourseSearchViewModel.CoursesLocationDetails),
                 Courses = GetDummyCourses(courseCount)
             };
@@ -58,6 +60,13 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Views
         {
             return htmlDom.DocumentNode.Descendants("div")
                 .FirstOrDefault(div => div.Attributes["class"].Value.Contains("dfc-code-jp-NoTrainingCoursesText"))?
+                .InnerText.Trim();
+        }
+
+        private string GetTrainingCoursesText(HtmlDocument htmlDom)
+        {
+            return htmlDom.DocumentNode.Descendants("div")
+                .FirstOrDefault(div => div.Attributes["class"].Value.Contains("dfc-code-jp-TrainingCoursesText"))?
                 .InnerText.Trim();
         }
 
@@ -79,20 +88,6 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Views
             }
 
             return displayedCourses;
-        }
-
-        private string GetFindTrainingCoursesText(HtmlDocument htmlDom)
-        {
-            return htmlDom.DocumentNode.Descendants("div")
-                .FirstOrDefault(div => div.Attributes["class"].Value.Contains("dfc-code-jp-FindTrainingCoursesLink"))?
-                .Descendants("a").FirstOrDefault()?.InnerText;
-        }
-
-        private string GetFindTrainingCoursesLink(HtmlDocument htmlDom)
-        {
-            return htmlDom.DocumentNode.Descendants("div")
-                .FirstOrDefault(div => div.Attributes["class"].Value.Contains("dfc-code-jp-FindTrainingCoursesLink"))?
-                .Descendants("a").FirstOrDefault()?.GetAttributeValue("href", string.Empty);
         }
 
         private string GetCoursesSectionTitleDetailsText(HtmlDocument htmlDom)

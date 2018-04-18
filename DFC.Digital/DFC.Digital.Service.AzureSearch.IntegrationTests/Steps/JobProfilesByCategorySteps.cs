@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
-using DFC.Digital.Automation.Test.Utilities;
+using DFC.Digital.AutomationTest.Utilities;
+using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
 using DFC.Digital.Repository.SitefinityCMS.Modules;
@@ -9,43 +10,49 @@ using System.Linq;
 using TechTalk.SpecFlow;
 using Xunit.Abstractions;
 
-namespace DFC.Digital.Service.AzureSearch.IntegrationTests.Steps
+namespace DFC.Digital.Service.AzureSearch.IntegrationTests
 {
     [Binding]
     internal class JobProfilesByCategorySteps
     {
         private IEnumerable<JobProfile> result;
-
-        private ITestOutputHelper outputHelper { get; set; }
-
         private ISearchService<JobProfileIndex> searchService;
         private ISearchIndexConfig searchIndex;
         private IMapper mapper;
+        private IAsyncHelper asyncHelper;
 
-        public ISearchQueryService<JobProfileIndex> searchQueryService { get; }
-
-        public JobProfilesByCategorySteps(ITestOutputHelper outputHelper, ISearchService<JobProfileIndex> searchService, ISearchIndexConfig searchIndex, ISearchQueryService<JobProfileIndex> searchQueryService, IMapper mapper)
+        public JobProfilesByCategorySteps(
+            ITestOutputHelper outputHelper,
+            ISearchService<JobProfileIndex> searchService,
+            ISearchIndexConfig searchIndex,
+            ISearchQueryService<JobProfileIndex> searchQueryService,
+            IMapper mapper)
         {
-            this.outputHelper = outputHelper;
+            this.OutputHelper = outputHelper;
             this.searchService = searchService;
             this.searchIndex = searchIndex;
-            this.searchQueryService = searchQueryService;
+            this.SearchQueryService = searchQueryService;
             this.mapper = mapper;
+            this.asyncHelper = new AsyncHelper();
         }
 
+        private ITestOutputHelper OutputHelper { get; set; }
+
+        private ISearchQueryService<JobProfileIndex> SearchQueryService { get; }
+
         [Given(@"the following job profiles in catogories  exist:")]
-        public void GivenTheFollowingJobProfilesInCatogoriesExist(Table table)
+        public void GivenTheFollowingJobProfilesInCatogoriesExistAsync(Table table)
         {
-            searchService.EnsureIndex(searchIndex.Name);
-            searchService.PopulateIndex(table.ToJobProfileSearchIndex());
+            asyncHelper.Synchronise(() => searchService.EnsureIndexAsync(searchIndex.Name));
+            asyncHelper.Synchronise(() => searchService.PopulateIndexAsync(table.ToJobProfileSearchIndex()));
         }
 
         [When(@"I filter by the category '(.*)'")]
         public void WhenIFilterByTheCategory(string filterCategory)
         {
-            outputHelper.WriteLine($"The filter category is '{filterCategory}'");
-            var JobProfileCategoryRepository = new JobProfileCategoryRepository(searchQueryService, mapper, null);
-            this.result = JobProfileCategoryRepository.GetRelatedJobProfiles(filterCategory);
+            OutputHelper.WriteLine($"The filter category is '{filterCategory}'");
+            var searchResult = JobProfileCategoryRepository.FilterByCategory(filterCategory, SearchQueryService);
+            this.result = searchResult.Results.Select(r => mapper.Map<JobProfile>(r.ResultItem));
         }
 
         [Then(@"the number of job profiles returned is (.*)")]
@@ -57,7 +64,7 @@ namespace DFC.Digital.Service.AzureSearch.IntegrationTests.Steps
         [Then(@"the job profiles are listed in the following order")]
         public void ThenTheJobProfilesAreListedInTheFollowingOrder(Table table)
         {
-            this.result.Select(r => r.Title).ShouldBeEquivalentTo(table.Rows.Select(r => r[0]), opt => opt.WithStrictOrdering());
+            this.result.Select(r => r.Title).Should().BeEquivalentTo(table.Rows.Select(r => r[0]), opt => opt.WithStrictOrdering());
         }
     }
 }

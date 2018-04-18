@@ -1,27 +1,28 @@
 ﻿using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
 using System;
+using System.Collections.Generic;
 using Telerik.Sitefinity.DynamicModules.Model;
 using Telerik.Sitefinity.GenericContent.Model;
 
 namespace DFC.Digital.Repository.SitefinityCMS
 {
-    public class JobProfileRepository : DynamicModuleRepository, IJobProfileRepository
+    public class JobProfileRepository : IJobProfileRepository
     {
         #region Fields
 
-        private const string JobprofileContentType = "Telerik.Sitefinity.DynamicTypes.Model.JobProfile.JobProfile";
-        private const string ModuleName = "Job Profile";
+        private readonly IDynamicModuleRepository<JobProfile> repository;
+        private readonly IDynamicModuleConverter<JobProfile> converter;
 
-        private IDynamicModuleConverter<JobProfile> converter;
+        private Dictionary<string, JobProfile> cachedJobProfiles = new Dictionary<string, JobProfile>();
 
         #endregion Fields
 
         #region Ctor
 
-        public JobProfileRepository(IDynamicModuleConverter<JobProfile> converter)
-            : base(ModuleName, JobprofileContentType)
+        public JobProfileRepository(IDynamicModuleRepository<JobProfile> repository, IDynamicModuleConverter<JobProfile> converter)
         {
+            this.repository = repository;
             this.converter = converter;
         }
 
@@ -37,7 +38,14 @@ namespace DFC.Digital.Repository.SitefinityCMS
         /// <returns>JobProfile</returns>
         public JobProfile GetByUrlName(string urlName)
         {
-            return ConvertDynamicContent(Get(item => item.UrlName == urlName && item.Status == ContentLifecycleStatus.Live && item.Visible == true));
+            var key = urlName.ToLower();
+            if (!cachedJobProfiles.ContainsKey(key))
+            {
+                var jobProfile = ConvertDynamicContent(repository.Get(item => item.UrlName == urlName && item.Status == ContentLifecycleStatus.Live && item.Visible == true));
+                cachedJobProfiles.Add(key, jobProfile);
+            }
+
+            return cachedJobProfiles[key];
         }
 
         /// <summary>
@@ -48,17 +56,22 @@ namespace DFC.Digital.Repository.SitefinityCMS
         /// <returns>JobProfile</returns>
         public JobProfile GetByUrlNameForPreview(string urlName)
         {
-            return ConvertDynamicContent(Get(item => item.UrlName == urlName && item.Status == ContentLifecycleStatus.Temp));
+            return ConvertDynamicContent(repository.Get(item => item.UrlName == urlName && item.Status == ContentLifecycleStatus.Temp));
+        }
+
+        public JobProfile GetByUrlNameForSearchIndex(string urlName, bool isPublishing)
+        {
+            return ConvertDynamicContent(repository.Get(item => item.UrlName == urlName && item.Status == (isPublishing ? ContentLifecycleStatus.Master : ContentLifecycleStatus.Live)));
         }
 
         public Type GetContentType()
         {
-            return DynamicModuleContentType;
+            return repository.GetContentType();
         }
 
         public string GetProviderName()
         {
-            return ProviderName;
+            return repository.GetProviderName();
         }
 
         private JobProfile ConvertDynamicContent(DynamicContent dynamicContent)

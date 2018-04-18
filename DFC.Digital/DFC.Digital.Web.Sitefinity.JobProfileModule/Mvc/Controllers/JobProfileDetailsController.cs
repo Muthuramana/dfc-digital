@@ -1,12 +1,11 @@
 ﻿using AutoMapper;
-using DFC.Digital.Core.Utilities;
+using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Web.Sitefinity.Core.Interface;
-using DFC.Digital.Web.Sitefinity.Core.Utility;
+using DFC.Digital.Web.Sitefinity.Core;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
-using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Telerik.Sitefinity.Mvc;
@@ -16,16 +15,14 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
     /// <summary>
     /// Custom Widget for the Search box and Search results for Job Profiles
     /// </summary>
-    /// <seealso cref="DFC.Digital.Web.Core.Base.BaseDfcController" />
+    /// <seealso cref="DFC.Digital.Web.Core.BaseDfcController" />
     [ControllerToolboxItem(Name = "JobProfileDetails", Title = "JobProfile Details", SectionName = SitefinityConstants.CustomWidgetSection)]
     public class JobProfileDetailsController : BaseJobProfileWidgetController
     {
         #region Private Fields
 
         private readonly IMapper mapper;
-        private readonly IWebAppContext webAppContext;
-        private readonly ISalaryService salaryService;
-        private readonly ISalaryCalculator salaryCalculator;
+        private readonly ISearchQueryService<JobProfileIndex> searchQueryService;
         private readonly IAsyncHelper asyncHelper;
 
         #endregion Private Fields
@@ -38,16 +35,13 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
             IApplicationLogger applicationLogger,
             ISitefinityPage sitefinityPage,
             IMapper mapper,
-            ISalaryService salaryService,
-            ISalaryCalculator salaryCalculator,
-            IAsyncHelper asyncHelper)
+            IAsyncHelper asyncHelper,
+            ISearchQueryService<JobProfileIndex> searchService)
             : base(webAppContext, jobProfileRepository, applicationLogger, sitefinityPage)
         {
             this.mapper = mapper;
-            this.webAppContext = webAppContext;
-            this.salaryService = salaryService;
-            this.salaryCalculator = salaryCalculator;
             this.asyncHelper = asyncHelper;
+            this.searchQueryService = searchService;
         }
 
         #endregion Constructors
@@ -60,7 +54,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         [DisplayName("Salary Text (Span)")]
         public string SalaryTextSpan { get; set; } = "(per year)";
 
-        [DisplayName("Text when Salary does not have values")]
+        [DisplayName("Text when Salary does not have values. If you change this value, you will also need to change the reciprocal value in JobProfileSearchBox widget on 'Search results' page.")]
         public string SalaryBlankText { get; set; } = "Variable";
 
         [DisplayName("Text for Salary Starter")]
@@ -76,25 +70,13 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         public string MaxAndMinHoursAreBlankText { get; set; } = "Variable";
 
         [DisplayName("Hours time period")]
-        public string HoursTimePeriodText { get; set; } = "per week";
+        public string HoursTimePeriodText { get; set; } = "(per week)";
 
         [DisplayName("Working Pattern Text")]
         public string WorkingPatternText { get; set; } = "You could work"; //"Working Pattern";
 
         [DisplayName("Working Pattern Span Text")]
         public string WorkingPatternSpanText { get; set; } = string.Empty; //"(you could also work)";
-
-        [DisplayName("Display sign posting for matching Job Profiles in BAU")]
-        public bool DisplayMatchingJPInBAUSignPost { get; set; } = false;
-
-        [DisplayName("Matching Job Profile exists in BAU text")]
-        public string MatchingJPInBAUText { get; set; } = "<a class='signpost signpost_jp' href =\"https://nationalcareersservice.direct.gov.uk/job-profiles/REPLACEWITHJPURL\"><p class='signpost_arrow'><span>Back to the National Careers Service</span> where you'll find all the job profiles</p></a>";
-
-        [DisplayName("Display sign posting for non matching Job Profiles in BAU")]
-        public bool DisplayNoMatchingJPInBAUSignPost { get; set; } = false;
-
-        [DisplayName("Matching Job Profile does not exists in BAU text")]
-        public string NoMatchingJPInBAUText { get; set; } = "<a class='signpost signpost_jp' href =\"https://nationalcareersservice.direct.gov.uk/job-profiles/home\"><p class='signpost_arrow'><span>Back to the National Careers Service</span> where you'll find all the job profiles</p></a>";
 
         #endregion Public Properties
 
@@ -114,15 +96,13 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         /// <summary>
         /// Indexes the specified urlname.
         /// </summary>
-        /// <param name="urlname">The urlname.</param>
+        /// <param name="urlName">The urlname.</param>
         /// <returns>Action Result</returns>
         [HttpGet]
-        [RelativeRoute("{urlname}")]
-        public ActionResult Index(string urlname)
+        [RelativeRoute("{urlName}")]
+        public ActionResult Index(string urlName)
         {
-            GetAndSetVocPersonalisationCookie(urlname);
-
-            return BaseIndex(urlname);
+            return BaseIndex(urlName);
         }
 
         protected override ActionResult GetDefaultView()
@@ -133,22 +113,8 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         protected override ActionResult GetEditorView()
         {
             // Sitefinity cannot handle async very well. So initialising it on current UI thread.
-            JobProfileDetailsViewModel model = mapper.Map<JobProfileDetailsViewModel>(CurrentJobProfile);
+            var model = mapper.Map<JobProfileDetailsViewModel>(CurrentJobProfile);
             return asyncHelper.Synchronise(() => GetJobProfileDetailsViewAsync(model));
-        }
-
-        private void GetAndSetVocPersonalisationCookie(string urlname)
-        {
-            if (!string.IsNullOrWhiteSpace(urlname))
-            {
-                webAppContext.SetVocCookie(Constants.VocPersonalisationCookieName, new VocSurveyPersonalisation
-                {
-                    Personalisation = new Dictionary<string, string>
-                    {
-                        { Constants.LastVisitedJobProfileKey, urlname }
-                    }
-                });
-            }
         }
 
         /// <summary>
@@ -180,41 +146,26 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
                 model = await PopulateSalaryAsync(model);
             }
 
-            if (model.IsLMISalaryFeedOverriden != true)
-            {
-                model = await PopulateSalaryAsync(model);
-            }
-
-            PopulateSignPosting(model);
-
             return View("Index", model);
         }
 
         private async Task<JobProfileDetailsViewModel> PopulateSalaryAsync(JobProfileDetailsViewModel model)
         {
-            var salary = await salaryService.GetSalaryBySocAsync(CurrentJobProfile.SOCCode);
+            var properties = new SearchProperties
+            {
+                FilterBy = $"{nameof(JobProfileIndex.UrlName)} eq '{model.UrlName.Replace("'", "''")}'"
+            };
 
-            model.SalaryStarter = salaryCalculator.GetStarterSalary(salary);
-            model.SalaryExperienced = salaryCalculator.GetExperiencedSalary(salary);
+            var jobProfileSearchResult = await searchQueryService.SearchAsync(model.Title, properties);
+
+            var jobProfileIndexItem = jobProfileSearchResult.Results.FirstOrDefault()?.ResultItem;
+            if (jobProfileIndexItem != null)
+            {
+                model.SalaryStarter = jobProfileIndexItem.SalaryStarter;
+                model.SalaryExperienced = jobProfileIndexItem.SalaryExperienced;
+            }
 
             return model;
-        }
-
-        private void PopulateSignPosting(JobProfileDetailsViewModel model)
-        {
-            model.DisplaySignPostingToBAU = false;
-            if (DisplayMatchingJPInBAUSignPost && CurrentJobProfile.DoesNotExistInBAU == false)
-            {
-                model.DisplaySignPostingToBAU = true;
-                model.SignPostingHTML = MatchingJPInBAUText.Replace("REPLACEWITHJPURL", CurrentJobProfile.BAUSystemOverrideUrl == string.Empty ? CurrentJobProfile.UrlName : CurrentJobProfile.BAUSystemOverrideUrl);
-            }
-
-            //This and the above conditions are independent.
-            if (DisplayNoMatchingJPInBAUSignPost && CurrentJobProfile.DoesNotExistInBAU == true)
-            {
-                model.DisplaySignPostingToBAU = true;
-                model.SignPostingHTML = NoMatchingJPInBAUText;
-            }
         }
 
         #endregion Actions

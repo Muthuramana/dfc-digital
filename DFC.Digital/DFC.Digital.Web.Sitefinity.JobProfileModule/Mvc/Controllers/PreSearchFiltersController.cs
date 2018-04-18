@@ -1,14 +1,13 @@
 ﻿using AutoMapper;
+using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Web.Core.Base;
-using DFC.Digital.Web.Sitefinity.Core.Utility;
+using DFC.Digital.Web.Core;
+using DFC.Digital.Web.Sitefinity.Core;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 using Telerik.Sitefinity.Mvc;
 
@@ -21,7 +20,6 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
 
         private readonly IPreSearchFiltersFactory preSearchFiltersFactory;
         private readonly IPreSearchFilterStateManager preSearchFilterStateManager;
-        private readonly IWebAppContext webAppContext;
         private readonly IMapper autoMapper;
 
         #endregion Private Fields
@@ -33,18 +31,15 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         /// </summary>
         /// <param name="applicationLogger">application logger</param>
         /// <param name="preSearchFiltersFactory">Sitefinity Repository to use</param>
-        /// <param name="webAppContext">Sitefinity context</param>
         /// <param name="preSearchFilterStateManager">Pre search filter state manager</param>
         /// <param name="autoMapper">Instance of auto mapper</param>
         public PreSearchFiltersController(
-            IWebAppContext webAppContext,
             IApplicationLogger applicationLogger,
             IMapper autoMapper,
             IPreSearchFiltersFactory preSearchFiltersFactory,
             IPreSearchFilterStateManager preSearchFilterStateManager) : base(applicationLogger)
         {
             this.preSearchFiltersFactory = preSearchFiltersFactory;
-            this.webAppContext = webAppContext;
             this.autoMapper = autoMapper;
             this.preSearchFilterStateManager = preSearchFilterStateManager;
         }
@@ -66,10 +61,10 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         public bool SingleSelectOnly { get; set; } = false;
 
         [DisplayName("Previous page URL - where to post the form when back button is clicked")]
-        public string PreviousPageURL { get; set; } = "homepageurl";
+        public string PreviousPageUrl { get; set; } = "homepageurl";
 
         [DisplayName("Next page URL - where to post the form when the continue button is clicked")]
-        public string NextPageURL { get; set; } = "nextpageurl";
+        public string NextPageUrl { get; set; } = "nextpageurl";
 
         [DisplayName("The number of this page in the selection sequence")]
         public int ThisPageNumber { get; set; } = 1;
@@ -88,7 +83,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         }
 
         [HttpPost]
-        public ActionResult Index(PSFModel model, PsfSearchResultsViewModel resultsViewModel)
+        public ActionResult Index(PsfModel model, PsfSearchResultsViewModel resultsViewModel)
         {
             // If the previous page is search page then, there will not be any sections in the passed PSFModel
             var previousPsfPage = model?.Section == null ? resultsViewModel?.PreSearchFiltersModel : model;
@@ -102,29 +97,29 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
                 }
             }
 
-            var currentPageFilter = GetCurrentPageFilter(model);
+            var currentPageFilter = GetCurrentPageFilter();
             return View(currentPageFilter);
         }
 
-        private PSFModel GetCurrentPageFilter(PSFModel previousPageFilter = null)
+        private PsfModel GetCurrentPageFilter()
         {
             var savedSection = preSearchFilterStateManager.GetSavedSection(SectionTitle, FilterType);
             var restoredSection = preSearchFilterStateManager.RestoreOptions(savedSection, GetFilterOptions());
 
             //create the section for this page
-            var currentSection = autoMapper.Map<PSFSection>(restoredSection);
-            var filterSection = currentSection ?? new PSFSection();
+            var currentSection = autoMapper.Map<PsfSection>(restoredSection);
+            var filterSection = currentSection ?? new PsfSection();
 
             filterSection.Name = SectionTitle;
             filterSection.Description = SectionDescription;
             filterSection.SingleSelectOnly = SingleSelectOnly;
-            filterSection.NextPageURL = NextPageURL;
-            filterSection.PreviousPageURL = PreviousPageURL;
+            filterSection.NextPageUrl = NextPageUrl;
+            filterSection.PreviousPageUrl = PreviousPageUrl;
             filterSection.PageNumber = ThisPageNumber;
             filterSection.TotalNumberOfPages = TotalNumberOfPages;
             filterSection.SectionDataType = FilterType.ToString();
 
-            var thisPageModel = new PSFModel
+            var thisPageModel = new PsfModel
             {
                 //Throw the state out again
                 OptionsSelected = preSearchFilterStateManager.GetStateJson(),
@@ -147,37 +142,37 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
             {
                 case PreSearchFilterType.Enabler:
                     {
-                        return preSearchFiltersFactory.GetRepository<PSFEnabler>().GetAllFilters().OrderBy(o => o.Order);
+                        return preSearchFiltersFactory.GetRepository<PsfEnabler>().GetAllFilters().OrderBy(o => o.Order);
                     }
 
                 case PreSearchFilterType.EntryQualification:
                     {
-                        return preSearchFiltersFactory.GetRepository<PSFEntryQualification>().GetAllFilters().OrderBy(o => o.Order);
+                        return preSearchFiltersFactory.GetRepository<PsfEntryQualification>().GetAllFilters().OrderBy(o => o.Order);
                     }
 
                 case PreSearchFilterType.Interest:
                     {
-                        return preSearchFiltersFactory.GetRepository<PSFInterest>().GetAllFilters().OrderBy(o => o.Order);
+                        return preSearchFiltersFactory.GetRepository<PsfInterest>().GetAllFilters().OrderBy(o => o.Order);
                     }
 
                 case PreSearchFilterType.TrainingRoute:
                     {
-                        return preSearchFiltersFactory.GetRepository<PSFTrainingRoute>().GetAllFilters().OrderBy(o => o.Order);
+                        return preSearchFiltersFactory.GetRepository<PsfTrainingRoute>().GetAllFilters().OrderBy(o => o.Order);
                     }
 
                 case PreSearchFilterType.JobArea:
                     {
-                        return preSearchFiltersFactory.GetRepository<PSFJobArea>().GetAllFilters().OrderBy(o => o.Order);
+                        return preSearchFiltersFactory.GetRepository<PsfJobArea>().GetAllFilters().OrderBy(o => o.Order);
                     }
 
                 case PreSearchFilterType.CareerFocus:
                     {
-                        return preSearchFiltersFactory.GetRepository<PSFCareerFocus>().GetAllFilters().OrderBy(o => o.Order);
+                        return preSearchFiltersFactory.GetRepository<PsfCareerFocus>().GetAllFilters().OrderBy(o => o.Order);
                     }
 
                 case PreSearchFilterType.PreferredTaskType:
                     {
-                        return preSearchFiltersFactory.GetRepository<PSFPreferredTaskType>().GetAllFilters().OrderBy(o => o.Order);
+                        return preSearchFiltersFactory.GetRepository<PsfPreferredTaskType>().GetAllFilters().OrderBy(o => o.Order);
                     }
 
                 default:
@@ -187,6 +182,6 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
             }
         }
 
-        #endregion
+        #endregion Private methods
     }
 }

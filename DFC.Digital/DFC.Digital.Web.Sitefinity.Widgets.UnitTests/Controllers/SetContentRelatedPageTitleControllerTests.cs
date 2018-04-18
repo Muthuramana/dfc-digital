@@ -1,4 +1,5 @@
-﻿using DFC.Digital.Data.Interfaces;
+﻿using DFC.Digital.Core;
+using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
 using DFC.Digital.Web.Sitefinity.Widgets.Mvc.Controllers;
 using FakeItEasy;
@@ -8,7 +9,7 @@ using System.Web;
 using System.Web.Mvc;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
+namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests
 {
     public class SetContentRelatedPageTitleControllerTests
     {
@@ -21,21 +22,21 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
         }
 
         [Theory]
-        [InlineData(1, PageType.JobProfile, "Engineer", true)]
-        [InlineData(2, PageType.Category, "Engineering and maintenance", true)]
-        [InlineData(3, PageType.SearchResults, "<Proofreader>", true)]
-        [InlineData(4, PageType.NotInterestedIn, "SouldRemainAsIs", true)]
-        [InlineData(5, PageType.NotInterestedIn, "SouldRemainAsIs", false)]
-        [InlineData(6, PageType.JobProfile, "Engineer", false)]
-        [InlineData(7, PageType.Category, "Engineering and maintenance", false)]
-        [InlineData(8, PageType.SearchResults, "<Proofreader>", false)]
-        public void IndexTest(int testIndex, PageType pageType, string expectedPageTitle, bool isViaURL)
+        [InlineData(PageType.JobProfile, "Engineer", true)]
+        [InlineData(PageType.Category, "Engineering and maintenance", true)]
+        [InlineData(PageType.SearchResults, "<Proofreader>", true)]
+        [InlineData(PageType.NotInterestedIn, "SouldRemainAsIs", true)]
+        [InlineData(PageType.NotInterestedIn, "SouldRemainAsIs", false)]
+        [InlineData(PageType.JobProfile, "Engineer", false)]
+        [InlineData(PageType.Category, "Engineering and maintenance", false)]
+        [InlineData(PageType.SearchResults, "<Proofreader>", false)]
+        public void IndexTest(PageType pageType, string expectedPageTitle, bool isViaUrl)
         {
             //Setup the fakes and dummies
             var categoryRepoFake = A.Fake<IJobProfileCategoryRepository>(ops => ops.Strict());
             var jobProfileRepoFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
 
             // Set up calls
             A.CallTo(() => webAppContextFake.IsCategoryPage).Returns(pageType == PageType.Category);
@@ -49,7 +50,9 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
             A.CallTo(() => categoryRepoFake.GetByUrlName(A<string>._)).Returns(new JobProfileCategory { Title = expectedPageTitle });
 
             if (pageType == PageType.SearchResults)
+            {
                 A.CallTo(() => webAppContextFake.RequestQueryString).Returns(new NameValueCollection { { "searchTerm", expectedPageTitle } });
+            }
 
             //Instantiate & Act
             var setContentRelatedPageTitleController = new SetContentRelatedPageTitleController(categoryRepoFake, jobProfileRepoFake, webAppContextFake, loggerFake);
@@ -57,23 +60,29 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
             ViewResult indexResult;
 
             //Act
-            if (isViaURL)
+            if (isViaUrl)
+            {
                 indexResult = setContentRelatedPageTitleController.Index("fakeURL") as ViewResult;
+            }
             else
+            {
                 indexResult = setContentRelatedPageTitleController.Index() as ViewResult;
+            }
 
             var titleSet = indexResult.ViewData["Title"];
 
-            if (isViaURL && (pageType == PageType.JobProfile || pageType == PageType.Category))
-                titleSet.Should().Be($"{expectedPageTitle} {setContentRelatedPageTitleController.PageTitleSeperator} {setContentRelatedPageTitleController.PageTitleSuffix}");
-            else if (!isViaURL && pageType == PageType.SearchResults)
-                titleSet.Should().Be($"{HttpUtility.HtmlEncode(expectedPageTitle)} {setContentRelatedPageTitleController.PageTitleSeperator} Search {setContentRelatedPageTitleController.PageTitleSeperator} {setContentRelatedPageTitleController.PageTitleSuffix}");
+            if (isViaUrl && (pageType == PageType.JobProfile || pageType == PageType.Category))
+            {
+                titleSet.Should().Be($"{expectedPageTitle} {setContentRelatedPageTitleController.PageTitleSeparator} {setContentRelatedPageTitleController.PageTitleSuffix}");
+            }
+            else if (!isViaUrl && pageType == PageType.SearchResults)
+            {
+                titleSet.Should().Be($"{HttpUtility.HtmlEncode(expectedPageTitle)} {setContentRelatedPageTitleController.PageTitleSeparator} Search {setContentRelatedPageTitleController.PageTitleSeparator} {setContentRelatedPageTitleController.PageTitleSuffix}");
+            }
             else
+            {
                 titleSet.Should().Be(null);
-        }
-
-        public void SearchTitleIsEncoded()
-        {
+            }
         }
     }
 }

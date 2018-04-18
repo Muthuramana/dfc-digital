@@ -1,20 +1,22 @@
 ﻿using Autofac;
-using DFC.Digital.Data.Interfaces;
+using DFC.Digital.Core;
 using Telerik.Microsoft.Practices.EnterpriseLibrary.Logging.TraceListeners;
 using Telerik.Microsoft.Practices.Unity;
 using Telerik.Sitefinity.Abstractions;
 
 namespace DFC.Digital.Web.Sitefinity.Logging
 {
-    public class DFCLogListener : CustomTraceListener
+    public class DfcLogListener : CustomTraceListener
     {
         private const string SitefinityLogIdentifier = "Sitefinity-Log";
         private IApplicationLogger appLogger;
 
-        public DFCLogListener()
+        public DfcLogListener()
         {
-            var autofacContainer = ObjectFactory.Container.Resolve<ILifetimeScope>();
-            this.appLogger = autofacContainer.Resolve<IApplicationLogger>();
+            var autofacApplicationLifetimeScope = ObjectFactory.Container.Resolve<ILifetimeScope>();
+
+            //This instance of logger will only destroyed whe w3wp is recycled
+            this.appLogger = autofacApplicationLifetimeScope.Resolve<IApplicationLogger>();
         }
 
         public override void Write(string message)

@@ -1,6 +1,7 @@
-﻿using DFC.Digital.Data.Interfaces;
+﻿using DFC.Digital.Core;
+using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Web.Sitefinity.Core.Interface;
+using DFC.Digital.Web.Sitefinity.Core;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using FakeItEasy;
@@ -8,7 +9,7 @@ using FluentAssertions;
 using TestStack.FluentMVCTesting;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
+namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
 {
     /// <summary>
     /// Job Profile Section Controller tests
@@ -29,7 +30,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
         {
             //Setup the fakes and dummies
             var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
             var sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
 
@@ -57,10 +58,10 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
                     .ShouldRenderDefaultView()
                     .WithModel<JobProfileSectionViewModel>(vm =>
                     {
-                        vm.PropertyName.ShouldBeEquivalentTo(jobprofileSectionController.PropertyName);
-                        vm.Title.ShouldBeEquivalentTo(jobprofileSectionController.Title);
-                        vm.TopSectionContent.ShouldBeEquivalentTo(jobprofileSectionController.TopSectionContent);
-                        vm.BottomSectionContent.ShouldBeEquivalentTo(jobprofileSectionController.BottomSectionContent);
+                        vm.PropertyName.Should().BeEquivalentTo(jobprofileSectionController.PropertyName);
+                        vm.Title.Should().BeEquivalentTo(jobprofileSectionController.Title);
+                        vm.TopSectionContent.Should().BeEquivalentTo(jobprofileSectionController.TopSectionContent);
+                        vm.BottomSectionContent.Should().BeEquivalentTo(jobprofileSectionController.BottomSectionContent);
                     })
                     .AndNoModelErrors();
 
@@ -94,7 +95,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
         {
             //Setup the fakes and dummies
             var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
             var sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
 
@@ -119,10 +120,10 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
                     .ShouldRenderDefaultView()
                     .WithModel<JobProfileSectionViewModel>(vm =>
                     {
-                        vm.PropertyName.ShouldBeEquivalentTo(jobprofileSectionController.PropertyName);
-                        vm.Title.ShouldBeEquivalentTo(jobprofileSectionController.Title);
-                        vm.TopSectionContent.ShouldBeEquivalentTo(jobprofileSectionController.TopSectionContent);
-                        vm.BottomSectionContent.ShouldBeEquivalentTo(jobprofileSectionController.BottomSectionContent);
+                        vm.PropertyName.Should().BeEquivalentTo(jobprofileSectionController.PropertyName);
+                        vm.Title.Should().BeEquivalentTo(jobprofileSectionController.Title);
+                        vm.TopSectionContent.Should().BeEquivalentTo(jobprofileSectionController.TopSectionContent);
+                        vm.BottomSectionContent.Should().BeEquivalentTo(jobprofileSectionController.BottomSectionContent);
                     })
                     .AndNoModelErrors();
             }

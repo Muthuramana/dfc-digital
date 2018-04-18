@@ -1,8 +1,9 @@
 ﻿using AutoMapper;
+using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Web.Core.Base;
-using DFC.Digital.Web.Sitefinity.Core.Utility;
+using DFC.Digital.Web.Core;
+using DFC.Digital.Web.Sitefinity.Core;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using System;
 using System.Collections.Generic;
@@ -126,13 +127,16 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         /// The index field operators.
         /// </value>
         [DisplayName("Index Field Operators")]
-        public string IndexFieldOperators { get; set; } = "Interests|and,TrainingRoutes|and,Enablers|and,EntryQualifications|and,PreferredTasks|and,JobAreas|and";
+        public string IndexFieldOperators { get; set; } = "Interests|and,TrainingRoutes|and,Enablers|and,EntryQualifications|and,PreferredTaskTypes|and,JobAreas|and";
 
         /// <summary>
         /// Gets or sets message to be displayed when there are no results
         /// </summary>
         [DisplayName("No results found message")]
         public string NoResultsMessage { get; set; } = "0 results found - try again using a different filters";
+
+        [DisplayName("Text when Salary does not have values.  If you change this value, you will also need to change the reciprocal value in JobProfileDetails widget on 'Job profiles' page.")]
+        public string SalaryBlankText { get; set; } = "Variable";
 
         [DisplayName("Demo Interests Value")]
         public string DemoInterestsValues { get; set; } =
@@ -171,7 +175,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         }
 
         [HttpPost]
-        public ActionResult Index(PSFModel model, PsfSearchResultsViewModel resultsViewModel, int page = 1)
+        public ActionResult Index(PsfModel model, PsfSearchResultsViewModel resultsViewModel, int page = 1)
         {
             if (model?.Section != null)
             {
@@ -179,100 +183,17 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
             }
             else
             {
-                return Search(resultsViewModel.PreSearchFiltersModel, page, false);
+                return Search(resultsViewModel?.PreSearchFiltersModel, page, false);
             }
         }
 
         [HttpPost]
-        public ActionResult Search(PSFModel model, int page = 1, bool notPaging = true)
+        public ActionResult Search(PsfModel model, int page = 1, bool notPaging = true)
         {
             return asyncHelper.Synchronise(() => DisplaySearchResultsAsync(model, page, notPaging));
         }
 
-        private PSFModel GetDummyPreSearchFiltersModel()
-        {
-            var model = new PSFModel
-            {
-                Sections = new List<PSFSection>(),
-                Section = new PSFSection { Options = new List<PSFOption>() }
-            };
-
-            // interests
-            var interestSection = new PSFSection
-            {
-                Name = nameof(JobProfileIndex.Interests),
-                Options = new List<PSFOption>(),
-                SectionDataType = "Interest",
-            };
-            if (!string.IsNullOrWhiteSpace(DemoInterestsValues))
-            {
-                AddFilterSection(interestSection, model, DemoInterestsValues);
-            }
-
-            // enablers
-            var enablersSection = new PSFSection
-            {
-                Name = nameof(JobProfileIndex.Enablers),
-                SectionDataType = nameof(PreSearchFilterType.Enabler),
-                Options = new List<PSFOption>(),
-            };
-            if (!string.IsNullOrWhiteSpace(DemoEnablersValues))
-            {
-                AddFilterSection(enablersSection, model, DemoEnablersValues);
-            }
-
-            // training routes
-            var trainingRouteSection = new PSFSection
-            {
-                Name = nameof(JobProfileIndex.TrainingRoutes),
-                SectionDataType = nameof(PreSearchFilterType.TrainingRoute),
-                Options = new List<PSFOption>(),
-            };
-            if (!string.IsNullOrWhiteSpace(DemoTrainingRoutesValues))
-            {
-                AddFilterSection(trainingRouteSection, model, DemoTrainingRoutesValues);
-            }
-
-            // entry qualifics
-            var entrySection = new PSFSection
-            {
-                Name = nameof(JobProfileIndex.EntryQualifications),
-                Options = new List<PSFOption>(),
-                SectionDataType = nameof(PreSearchFilterType.EntryQualification),
-            };
-            if (!string.IsNullOrWhiteSpace(DemoEntryQualificationsValues))
-            {
-                AddFilterSection(entrySection, model, DemoEntryQualificationsValues);
-            }
-
-            //job areas
-            var jobAreas = new PSFSection
-            {
-                Name = nameof(JobProfileIndex.EntryQualifications),
-                Options = new List<PSFOption>(),
-                SectionDataType = nameof(PreSearchFilterType.JobArea),
-            };
-            if (!string.IsNullOrWhiteSpace(DemoJobAreasValues))
-            {
-                AddFilterSection(jobAreas, model, DemoJobAreasValues);
-            }
-
-            // preferred tasks
-            var preferredTasks = new PSFSection
-            {
-                Name = nameof(JobProfileIndex.EntryQualifications),
-                Options = new List<PSFOption>(),
-                SectionDataType = nameof(PreSearchFilterType.PreferredTaskType),
-            };
-            if (!string.IsNullOrWhiteSpace(DemoPreferredTaskTypesValues))
-            {
-                AddFilterSection(preferredTasks, model, DemoPreferredTaskTypesValues);
-            }
-
-            return model;
-        }
-
-        private void AddFilterSection(PSFSection currentSection, PSFModel model, string demovalues)
+        private static void AddFilterSection(PsfSection currentSection, PsfModel model, string demovalues)
         {
             var values = demovalues.Split('~');
             foreach (var value in values)
@@ -280,7 +201,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
                 var data = value.Split(',');
                 if (data.Length == 2)
                 {
-                    currentSection.Options.Add(new PSFOption
+                    currentSection.Options.Add(new PsfOption
                     {
                         IsSelected = Convert.ToBoolean(data[0]),
                         OptionKey = Convert.ToString(data[1])
@@ -294,7 +215,90 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
             }
         }
 
-        private async Task<ActionResult> DisplaySearchResultsAsync(PSFModel model, int page, bool notPaging = true)
+        private PsfModel GetDummyPreSearchFiltersModel()
+        {
+            var model = new PsfModel
+            {
+                Sections = new List<PsfSection>(),
+                Section = new PsfSection { Options = new List<PsfOption>() }
+            };
+
+            // interests
+            var interestSection = new PsfSection
+            {
+                Name = nameof(JobProfileIndex.Interests),
+                Options = new List<PsfOption>(),
+                SectionDataType = "Interest",
+            };
+            if (!string.IsNullOrWhiteSpace(DemoInterestsValues))
+            {
+                AddFilterSection(interestSection, model, DemoInterestsValues);
+            }
+
+            // enablers
+            var enablersSection = new PsfSection
+            {
+                Name = nameof(JobProfileIndex.Enablers),
+                SectionDataType = nameof(PreSearchFilterType.Enabler),
+                Options = new List<PsfOption>(),
+            };
+            if (!string.IsNullOrWhiteSpace(DemoEnablersValues))
+            {
+                AddFilterSection(enablersSection, model, DemoEnablersValues);
+            }
+
+            // training routes
+            var trainingRouteSection = new PsfSection
+            {
+                Name = nameof(JobProfileIndex.TrainingRoutes),
+                SectionDataType = nameof(PreSearchFilterType.TrainingRoute),
+                Options = new List<PsfOption>(),
+            };
+            if (!string.IsNullOrWhiteSpace(DemoTrainingRoutesValues))
+            {
+                AddFilterSection(trainingRouteSection, model, DemoTrainingRoutesValues);
+            }
+
+            // entry qualifics
+            var entrySection = new PsfSection
+            {
+                Name = nameof(JobProfileIndex.EntryQualifications),
+                Options = new List<PsfOption>(),
+                SectionDataType = nameof(PreSearchFilterType.EntryQualification),
+            };
+            if (!string.IsNullOrWhiteSpace(DemoEntryQualificationsValues))
+            {
+                AddFilterSection(entrySection, model, DemoEntryQualificationsValues);
+            }
+
+            //job areas
+            var jobAreas = new PsfSection
+            {
+                Name = nameof(JobProfileIndex.EntryQualifications),
+                Options = new List<PsfOption>(),
+                SectionDataType = nameof(PreSearchFilterType.JobArea),
+            };
+            if (!string.IsNullOrWhiteSpace(DemoJobAreasValues))
+            {
+                AddFilterSection(jobAreas, model, DemoJobAreasValues);
+            }
+
+            // preferred tasks
+            var preferredTasks = new PsfSection
+            {
+                Name = nameof(JobProfileIndex.EntryQualifications),
+                Options = new List<PsfOption>(),
+                SectionDataType = nameof(PreSearchFilterType.PreferredTaskType),
+            };
+            if (!string.IsNullOrWhiteSpace(DemoPreferredTaskTypesValues))
+            {
+                AddFilterSection(preferredTasks, model, DemoPreferredTaskTypesValues);
+            }
+
+            return model;
+        }
+
+        private async Task<ActionResult> DisplaySearchResultsAsync(PsfModel model, int page, bool notPaging = true)
         {
             var resultModel = GetPsfSearchResultsViewModel(model, notPaging);
 
@@ -321,7 +325,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
             return View("SearchResult", resultModel);
         }
 
-        private PsfSearchResultsViewModel GetPsfSearchResultsViewModel(PSFModel model, bool notPaging)
+        private PsfSearchResultsViewModel GetPsfSearchResultsViewModel(PsfModel model, bool notPaging)
         {
             preSearchFilterStateManager.RestoreState(model.OptionsSelected);
             if (notPaging)
@@ -348,23 +352,24 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
 
             var filterState = preSearchFilterStateManager.GetPreSearchFilterState();
 
-            model.Sections = mapper.Map<List<PSFSection>>(filterState.Sections);
+            model.Sections = mapper.Map<List<PsfSection>>(filterState.Sections);
 
             var resultModel = new PsfSearchResultsViewModel
             {
                 MainPageTitle = MainPageTitle,
                 SecondaryText = SecondaryText,
-                PreSearchFiltersModel = new PSFModel
+                PreSearchFiltersModel = new PsfModel
                 {
                     OptionsSelected = preSearchFilterStateManager.GetStateJson(),
-                    Section = new PSFSection
+                    Section = new PsfSection
                     {
                         PageNumber = notPaging ? model.Section.PageNumber++ : model.Section.PageNumber
                     }
                 },
-                BackPageUrl = BackPageUrl,
+                BackPageUrl = new Uri(BackPageUrl, UriKind.RelativeOrAbsolute),
                 BackPageUrlText = BackPageUrlText,
-                JobProfileCategoryPage = JobProfileCategoryPage
+                JobProfileCategoryPage = JobProfileCategoryPage,
+                SalaryBlankText = SalaryBlankText
             };
 
             //Need to do this to force the model we have changed to refresh
@@ -403,16 +408,17 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
 
             if (resultModel.TotalPages > 1 && resultModel.TotalPages >= resultModel.PageNumber)
             {
-                resultModel.NextPageUrl = $"{PsfSearchResultsPage}?page={resultModel.PageNumber + 1}";
+                resultModel.NextPageUrl = new Uri($"{PsfSearchResultsPage}?page={resultModel.PageNumber + 1}", UriKind.RelativeOrAbsolute);
                 resultModel.NextPageUrlText = $"{resultModel.PageNumber + 1} of {resultModel.TotalPages}";
 
                 if (resultModel.PageNumber > 1)
                 {
-                    resultModel.PreviousPageUrl = $"{PsfSearchResultsPage}{(resultModel.PageNumber == 2 ? string.Empty : $"?page={resultModel.PageNumber - 1}")}";
+                    resultModel.PreviousPageUrl = new Uri($"{PsfSearchResultsPage}{(resultModel.PageNumber == 2 ? string.Empty : $"?page={resultModel.PageNumber - 1}")}", UriKind.RelativeOrAbsolute);
                     resultModel.PreviousPageUrlText = $"{resultModel.PageNumber - 1} of {resultModel.TotalPages}";
                 }
             }
         }
+
         #endregion Actions
     }
 }

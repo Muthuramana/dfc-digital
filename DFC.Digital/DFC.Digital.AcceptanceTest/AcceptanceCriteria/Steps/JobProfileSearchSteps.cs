@@ -1,14 +1,9 @@
-﻿using DFC.Digital.AcceptanceTest.Infrastructure.Config;
-using DFC.Digital.AcceptanceTest.Infrastructure.Pages;
-using DFC.Digital.AcceptanceTest.Infrastructure.Utilities;
-using DFC.Digital.Automation.Test.Utilities;
+﻿using DFC.Digital.AcceptanceTest.Infrastructure;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using FluentAssertions;
 using Newtonsoft.Json;
-using System.Linq;
-using System.Threading.Tasks;
 using TechTalk.SpecFlow;
 using TechTalk.SpecFlow.Assist;
 using Xunit.Abstractions;
@@ -18,23 +13,11 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
     [Binding]
     public class JobProfileSearchSteps : BaseStep
     {
-        #region Fields
-
-        private SearchResultItem<JobProfileIndex> givenJobProfile;
-        private ISearchQueryService<JobProfileIndex> searchQueryService;
-        private ISearchService<JobProfileIndex> searchService;
-        private ISearchIndexConfig indexConfig;
-
-        #endregion Fields
-
         #region Ctor
 
-        public JobProfileSearchSteps(ISearchQueryService<JobProfileIndex> searchQueryService, ISearchService<JobProfileIndex> searchService, ISearchIndexConfig indexConfig, ITestOutputHelper outputHelper, BrowserStackSelenoHost browserStackSelenoHost, ScenarioContext scenarioContext) : base(browserStackSelenoHost, scenarioContext)
+        public JobProfileSearchSteps(ITestOutputHelper outputHelper, BrowserStackSelenoHost browserStackSelenoHost, ScenarioContext scenarioContext) : base(browserStackSelenoHost, scenarioContext)
         {
-            this.searchQueryService = searchQueryService;
-            this.searchService = searchService;
             OutputHelper = outputHelper;
-            this.indexConfig = indexConfig;
         }
 
         #endregion Ctor
@@ -50,59 +33,12 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         [Given(@"that I am viewing the search results page for '(.*)'")]
         public void GivenThatIAmViewingTheSearchResultsPageFor(string previousSearchTerm)
         {
-            NavigateToHomePage<HomePage, JobProfileSearchBoxViewModel>()
+            NavigateToHomePage<Homepage, JobProfileSearchBoxViewModel>()
                 .Search<SearchPage>(new JobProfileSearchBoxViewModel
                 {
                     SearchTerm = previousSearchTerm
                 })
                 .SaveTo(ScenarioContext);
-        }
-
-        [Given(@"a job profile exists which has an AlternativeTitle")]
-        public async Task GivenAJobProfileExistsWhichHasAnAlternativeTitle()
-        {
-            var result = await searchQueryService.SearchAsync(
-                "*",
-                new SearchProperties { UseRawSearchTerm = true, Count = 1, FilterBy = "(FilterableAlternativeTitle ne '' and FilterableAlternativeTitle ne null)" });
-
-            result.Results.Count().Should().BeGreaterThan(0);
-
-            givenJobProfile = result.Results.First();
-            NavigateToHomePage<HomePage, JobProfileSearchBoxViewModel>();
-        }
-
-        [Given(@"a job profile exists which has no AlternativeTitle")]
-        public async Task GivenAJobProfileExistsWhichHasNoAlternativeTitle()
-        {
-            var result = await searchQueryService.SearchAsync(
-                "*",
-                new SearchProperties { UseRawSearchTerm = true, Count = 1, FilterBy = "(FilterableAlternativeTitle eq '' or FilterableAlternativeTitle eq null)" });
-
-            result.Results.Count().Should().BeGreaterThan(0);
-
-            givenJobProfile = result.Results.First();
-            NavigateToHomePage<HomePage, JobProfileSearchBoxViewModel>();
-        }
-
-        [Given(@"multiple job profiles exist for '(.*)':")]
-        public async Task GivenMultipleJobProfilesPossessSimilarTitles(string searchTerm)
-        {
-            var result = await searchQueryService.SearchAsync(searchTerm);
-
-            result.Results.Count().Should().BeGreaterThan(1);
-            NavigateToHomePage<HomePage, JobProfileSearchBoxViewModel>();
-        }
-
-        [Given(@"the following job profiles exist:")]
-        public async Task GivenTheFollowingJobProfilesExist(Table table)
-        {
-            await searchService.PopulateIndexAsync(table.ToJobProfileSearchIndex());
-        }
-
-        [Given(@"'(.*)' job profiles exist with '(.*)':")]
-        public async Task GivenJobProfilesExistWith(int countOfJobProfiles, string searchTerm)
-        {
-            await searchService.PopulateIndexAsync(countOfJobProfiles.CreateWithTitle(searchTerm));
         }
 
         [Given(@"that I am viewing the search results page")]
@@ -118,24 +54,13 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         [When(@"I search using '(.*)'")]
         public void WhenISearchUsing(string searchTerm)
         {
-            GetNavigatedPage<HomePage>()
+            GetNavigatedPage<Homepage>()
                 .Search<SearchPage>(new JobProfileSearchBoxViewModel
                 {
                     SearchTerm = searchTerm
                 })
                 .SaveTo(ScenarioContext);
             ScenarioContext.Set(searchTerm, "searchTerm");
-        }
-
-        [When(@"I search using the profile's Title")]
-        public void WhenISearchUsingTheProfileSTitle()
-        {
-            GetNavigatedPage<HomePage>()
-                .Search<SearchPage>(new JobProfileSearchBoxViewModel
-                {
-                    SearchTerm = givenJobProfile.ResultItem.FilterableTitle
-                })
-                .SaveTo(ScenarioContext);
         }
 
         [When(@"I search using '(.*)' on the results page")]
@@ -156,13 +81,13 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
             var searchPage = GetNavigatedPage<SearchPage>();
             ScenarioContext.Set(searchPage.SelectedProfileTitle(result), "profileSelected");
             ScenarioContext.Set(searchPage.SelectedProfileUrl(result), "profileURL");
-            var jobProfilePage = searchPage.GoToResult<JobProfilePage>(result).SaveTo(ScenarioContext);
+            searchPage.GoToResult<JobProfilePage>(result).SaveTo(ScenarioContext);
         }
 
         [When(@"I click the fill in short survey link")]
         public void WhenIClickTheLink()
         {
-            GetNavigatedPage<HomePage>().GoToSurvey<VocSurveyPage>().SaveTo(ScenarioContext);
+            GetNavigatedPage<Homepage>().GoToSurvey<VocSurveyPage>().SaveTo(ScenarioContext);
         }
 
         [When(@"I navigate to the next page of results")]
@@ -174,7 +99,7 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         [When(@"I click the close survey link")]
         public void WhenIClickTheCloseSurveyLink()
         {
-            GetNavigatedPage<HomePage>().CloseSurvey();
+            GetNavigatedPage<Homepage>().CloseSurvey();
         }
 
         [When(@"I delete the cookie and refresh the page")]
@@ -191,19 +116,19 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
             {
                 case "Search results":
                     var searchPage = GetNavigatedPage<SearchPage>();
-                    searchPage.ClickFindACareerBreadcrumb<HomePage>()
+                    searchPage.ClickFindACareerBreadcrumb<Homepage>()
                         .SaveTo(ScenarioContext);
                     break;
 
                 case "Job profile":
                     var jobProfile = GetNavigatedPage<JobProfilePage>();
-                    jobProfile.ClickFindACareerBreadcrumb<HomePage>()
+                    jobProfile.ClickFindACareerBreadcrumb<Homepage>()
                         .SaveTo(ScenarioContext);
                     break;
 
                 case "Job category":
                     var jobCategory = GetNavigatedPage<JobProfileCategoryPage>();
-                    jobCategory.ClickFindACareerBreadcrumb<HomePage>()
+                    jobCategory.ClickFindACareerBreadcrumb<Homepage>()
                         .SaveTo(ScenarioContext);
                     break;
             }
@@ -212,7 +137,7 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         [When(@"I select suggested result no '(.*)' and search")]
         public void WhenISelectSuggestedResultNo(int suggestionNo)
         {
-            var homePage = GetNavigatedPage<HomePage>();
+            var homePage = GetNavigatedPage<Homepage>();
             ScenarioContext.Set(homePage.GetSuggestedSearchText(suggestionNo), "selectedSearch");
             homePage.SelectSuggestedSearch(suggestionNo);
             homePage.Search<SearchPage>()
@@ -222,7 +147,7 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         [When(@"I enter the term '(.*)'")]
         public void WhenIEnterTheTerm(string searchTerm)
         {
-            var homePage = GetNavigatedPage<HomePage>();
+            var homePage = GetNavigatedPage<Homepage>();
             homePage.EnterSearchText(searchTerm);
         }
 
@@ -288,14 +213,14 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         [Then(@"the survey banner should be displayed")]
         public void ThenTheSurveyBannerShouldBeDisplayed()
         {
-            var homePage = GetNavigatedPage<HomePage>();
+            var homePage = GetNavigatedPage<Homepage>();
             homePage.IsSurveyBannerDisplayed.Should().BeTrue();
         }
 
         [Then(@"the survey banner should not be displayed")]
         public void ThenTheSurveyBannerShouldNotBeDisplayed()
         {
-            var homePage = GetNavigatedPage<HomePage>();
+            var homePage = GetNavigatedPage<Homepage>();
             homePage.IsSurveyBannerDisplayed.Should().BeFalse();
         }
 
@@ -315,12 +240,12 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         }
 
         [Then(@"the last result is '(.*)' on the page")]
-        public void ThenTheLastResultIsOnThePage(string showFlag)
+        public void ThenTheLastResultIsOnThePage(string shouldBeShown)
         {
             var searchPage = GetNavigatedPage<SearchPage>();
-            if (showFlag.IsShown())
+            if (shouldBeShown.IsShown())
             {
-                searchPage.HighestRankOnPage.ShouldBeEquivalentTo(searchPage.TotalResultsCount);
+                searchPage.HighestRankOnPage.Should().Be(searchPage.TotalResultsCount);
             }
             else
             {
@@ -329,10 +254,10 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         }
 
         [Then(@"the Next pagination control is '(.*)'")]
-        public void ThenTheNextPaginationControlIs(string showFlag)
+        public void ThenTheNextPaginationControlIs(string shouldBeShown)
         {
             var searchPage = GetNavigatedPage<SearchPage>();
-            searchPage.HasNextPage.ShouldBeEquivalentTo(showFlag.IsShown());
+            searchPage.HasNextPage.Should().Be(shouldBeShown.IsShown());
         }
 
         [Then(@"the Next Pagination control label is '(.*)'")]
@@ -350,12 +275,12 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         }
 
         [Then(@"the first result is '(.*)' on the page")]
-        public void ThenTheFirstResultIsOnThePage(string showFlag)
+        public void ThenTheFirstResultIsOnThePage(string shouldBeShown)
         {
             var searchPage = GetNavigatedPage<SearchPage>();
-            if (showFlag.IsShown())
+            if (shouldBeShown.IsShown())
             {
-                searchPage.LowestRankOnPage.ShouldBeEquivalentTo(1);
+                searchPage.LowestRankOnPage.Should().Be(1);
             }
             else
             {
@@ -378,10 +303,10 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         }
 
         [Then(@"the Previous pagination control is '(.*)'")]
-        public void ThenThePreviousPaginationControlIs(string showFlag)
+        public void ThenThePreviousPaginationControlIs(string shouldBeShown)
         {
             var searchPage = GetNavigatedPage<SearchPage>();
-            searchPage.HasPreviousPage.ShouldBeEquivalentTo(showFlag.IsShown());
+            searchPage.HasPreviousPage.Should().Be(shouldBeShown.IsShown());
         }
 
         [Then(@"the Previous Pagination control label is '(.*)'")]
@@ -433,7 +358,7 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
             //Log results
             OutputHelper.WriteLine($"Expected order expected {JsonConvert.SerializeObject(expected)}");
             OutputHelper.WriteLine($"  Actual order expected {JsonConvert.SerializeObject(actual)}");
-            actual.ShouldBeEquivalentTo(expected);
+            actual.Should().BeEquivalentTo(expected);
         }
 
         [Then(@"the search title should be visible")]
@@ -498,7 +423,7 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         [Then(@"the suggested results should appear")]
         public void ThenTheSuggestedResultsShouldAppear()
         {
-            var homePage = GetNavigatedPage<HomePage>();
+            var homePage = GetNavigatedPage<Homepage>();
             homePage.HasSuggestedSearch.Should().BeTrue();
         }
 
@@ -514,7 +439,7 @@ namespace DFC.Digital.AcceptanceTest.AcceptanceCriteria.Steps
         [Then(@"the suggested box should be disappear")]
         public void ThenTheSuggestedBoxShouldBeDisappear()
         {
-            var homePage = GetNavigatedPage<HomePage>();
+            var homePage = GetNavigatedPage<Homepage>();
             homePage.HasSuggestedSearch.Should().BeFalse();
         }
 

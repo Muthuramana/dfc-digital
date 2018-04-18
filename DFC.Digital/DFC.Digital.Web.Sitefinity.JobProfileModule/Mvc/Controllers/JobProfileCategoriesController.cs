@@ -1,6 +1,8 @@
-﻿using DFC.Digital.Data.Interfaces;
+﻿using DFC.Digital.Core;
+using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Web.Sitefinity.Core.Utility;
+using DFC.Digital.Web.Core;
+using DFC.Digital.Web.Sitefinity.Core;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,7 +17,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
     /// </summary>
     /// <seealso cref="Web.Core.Base.BaseDfcController" />
     [ControllerToolboxItem(Name = "JobProfileCategories", Title = "JobProfile Categories", SectionName = SitefinityConstants.CustomWidgetSection)]
-    public class JobProfileCategoriesController : Web.Core.Base.BaseDfcController
+    public class JobProfileCategoriesController : BaseDfcController
     {
         #region Private Fields
 
@@ -23,6 +25,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         private readonly IWebAppContext webAppContext;
 
         #endregion Private Fields
+
         #region Constructors
 
         public JobProfileCategoriesController(IJobProfileCategoryRepository repository, IWebAppContext webAppContext, IApplicationLogger applicationLogger) : base(applicationLogger)
@@ -45,6 +48,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         public bool SidePageDisplay { get; set; }
 
         #endregion Public Properties
+
         #region Actions
 
         /// <summary>
@@ -70,6 +74,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         /// <summary>
         /// Indexes this instance.
         /// </summary>
+        /// <param name="urlName">Invoked category</param>
         /// <returns>Action Result</returns>
         [HttpGet]
         [RelativeRoute("{urlName}")]

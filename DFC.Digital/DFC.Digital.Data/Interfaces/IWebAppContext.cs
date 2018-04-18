@@ -1,6 +1,5 @@
 ﻿using DFC.Digital.Data.Model;
 using System.Collections.Specialized;
-using System.Web;
 
 namespace DFC.Digital.Data.Interfaces
 {
@@ -23,12 +22,14 @@ namespace DFC.Digital.Data.Interfaces
 
         NameValueCollection RequestQueryString { get; }
 
-        bool IsValidAndFormattedUrl(string urlTobeValidated);
+        bool IsValidAndFormattedUrl(string urlToBeValidated);
 
-        bool SetVocCookie(string cookieName, VocSurveyPersonalisation userPersonalisation);
+        void SetVocCookie(string cookieName, string cookieValue);
 
         VocSurveyPersonalisation GetVocCookie(string cookieName);
 
         string GetGAClientId();
+
+        void SetResponseStatusCode(int statusCode);
     }
 }

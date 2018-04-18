@@ -6,33 +6,37 @@ using RazorGenerator.Testing;
 using System.Linq;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Views
+namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests
 {
     public class VocSurveyViewTests
     {
         [Fact]
 
         //As a Citizen, I want to be able to give feedback on the BETA Service (VOC: Exit Route)
-        public void DFC_685_A1_VocSurveyIndex()
+        public static void DFC685A1VocSurveyIndex()
         {
             // Arrange
             var indexView = new _MVC_Views_VocSurvey_Index_cshtml();
             var vocSurveyVmDummy =
-                GenerateVocSurveyViewModelDummy(nameof(VocSurveyViewModel.AgeLimitText), nameof(VocSurveyViewModel.DontHaveEmailText), nameof(VocSurveyViewModel.EmailSentText)
-                    , nameof(VocSurveyViewModel.FormIntroText), nameof(VocSurveyViewModel.EmailNotSentText));
+                GenerateVocSurveyViewModelDummy(
+                    nameof(VocSurveyViewModel.AgeLimitText),
+                    nameof(VocSurveyViewModel.DoNotHaveEmailText),
+                    nameof(VocSurveyViewModel.EmailSentText),
+                    nameof(VocSurveyViewModel.FormIntroText),
+                    nameof(VocSurveyViewModel.EmailNotSentText));
 
             // Act
             var htmlDom = indexView.RenderAsHtml(vocSurveyVmDummy);
 
             // Assert
-            GetViewModelData(htmlDom).ShouldBeEquivalentTo(vocSurveyVmDummy);
+            GetViewModelData(htmlDom).Should().BeEquivalentTo(vocSurveyVmDummy);
         }
 
         [Theory]
         [InlineData("success message")]
         [InlineData("no success message")]
         [InlineData("")]
-        public void DFC_685_A2_VocSurveyResponse(string response)
+        public void DFC685A2VocSurveyResponse(string response)
         {
             // Arrange
             var indexView = new _MVC_Views_VocSurvey_Response_cshtml();
@@ -46,30 +50,30 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Views
             var htmlDom = indexView.RenderAsHtml(emailSubmissionViewModelDummy);
 
             // Assert
-            GetViewErrorMessage(htmlDom).ShouldBeEquivalentTo(response);
+            GetViewErrorMessage(htmlDom).Should().BeEquivalentTo(response);
         }
 
-        private string GetViewErrorMessage(HtmlDocument htmlDom)
+        private static string GetViewErrorMessage(HtmlDocument htmlDom)
         {
             return htmlDom.DocumentNode.Descendants("h2").FirstOrDefault()?.InnerText;
         }
 
-        private VocSurveyViewModel GetViewModelData(HtmlDocument htmlDom)
+        private static VocSurveyViewModel GetViewModelData(HtmlDocument htmlDom)
         {
             return new VocSurveyViewModel
             {
                 EmailNotSentText = GetEmailSentMessage(htmlDom, "js-survey-not-complete"),
                 AgeLimitText = GetAgeLimitText(htmlDom),
-                DontHaveEmailText = GetDontHaveEmailText(htmlDom),
+                DoNotHaveEmailText = GetDontHaveEmailText(htmlDom),
                 EmailSentText = GetEmailSentMessage(htmlDom, "js-survey-complete"),
                 FormIntroText = htmlDom.DocumentNode.Descendants("p").FirstOrDefault()?.InnerText
             };
         }
 
-        private string GetEmailSentMessage(HtmlDocument htmlDom, string itemClass)
+        private static string GetEmailSentMessage(HtmlDocument htmlDom, string itemClass)
         {
             var divItem = htmlDom.DocumentNode.Descendants("div").FirstOrDefault(div =>
-               div.HasAttributes && div.Attributes["class"].Value.ToLower().Contains(itemClass.ToLower()));
+                div.HasAttributes && div.Attributes["class"].Value.ToLower().Contains(itemClass.ToLower()));
 
             if (divItem != null)
             {
@@ -79,15 +83,15 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Views
             return string.Empty;
         }
 
-        private string GetDontHaveEmailText(HtmlDocument htmlDom)
+        private static string GetDontHaveEmailText(HtmlDocument htmlDom)
         {
             var anchorTag = htmlDom.DocumentNode.Descendants("a").FirstOrDefault(anchr =>
-                 anchr.HasAttributes && anchr.Attributes["class"].Value.ToLower().Contains("survey_link"));
+                anchr.HasAttributes && anchr.Attributes["class"].Value.ToLower().Contains("survey_link"));
 
             return anchorTag?.InnerText;
         }
 
-        private string GetAgeLimitText(HtmlDocument htmlDom)
+        private static string GetAgeLimitText(HtmlDocument htmlDom)
         {
             var label = htmlDom.DocumentNode.Descendants("label").FirstOrDefault(lbl =>
                 lbl.HasAttributes && lbl.Attributes["class"].Value.ToLower().Contains("survey_label"));
@@ -95,13 +99,17 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Views
             return label?.Descendants("span").FirstOrDefault()?.InnerText;
         }
 
-        private VocSurveyViewModel GenerateVocSurveyViewModelDummy(
-            string ageLimitText, string dontHaveEmailText, string emailSentText, string formIntroText, string emailNotSentText)
+        private static VocSurveyViewModel GenerateVocSurveyViewModelDummy(
+            string ageLimitText,
+            string dontHaveEmailText,
+            string emailSentText,
+            string formIntroText,
+            string emailNotSentText)
         {
             var result = new VocSurveyViewModel
             {
                 AgeLimitText = ageLimitText,
-                DontHaveEmailText = dontHaveEmailText,
+                DoNotHaveEmailText = dontHaveEmailText,
                 EmailSentText = emailSentText,
                 FormIntroText = formIntroText,
                 EmailNotSentText = emailNotSentText

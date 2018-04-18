@@ -40,14 +40,14 @@ $(document).ready(function () {
     //Filters Non Applicable functinality
     $(".filter-na").change(function () {
         if (this.checked) {
-            $('input:checked').not(".filter-na").removeAttr('checked');
-            this.change
+            $('input:checked').not(".filter-na").prop('checked', false);
+            this.change;
         }
     });
 
     $('input:checkbox').not(".filter-na").change(function () {
         if ($(".filter-na").prop('checked')) {
-            $(".filter-na").removeAttr('checked');
+            $(".filter-na").prop('checked', false);
         }
     });
 
@@ -84,7 +84,7 @@ $.extend($.ui.autocomplete.prototype, {
 //get all input boxes with class "autocomplete"
 $('.js-autocomplete').each(function () {
     $(this).autocomplete({
-        source: $(this).data("autocomplete-source") + '?maxNumberDisplyed=' + $(this).data("autocomplete-maxnumberdisplyed") + '&fuzzySearch=' + $(this).data('autocomplete-fuzzysearch'),
+        source: $(this).data("autocomplete-source") + '?maxNumberDisplayed=' + $(this).data("autocomplete-maxnumberdisplyed") + '&fuzzySearch=' + $(this).data('autocomplete-fuzzysearch'),
         minLength: $(this).data('autocomplete-minlength')
     });
 });

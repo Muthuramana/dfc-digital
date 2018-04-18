@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using Telerik.Sitefinity.DynamicModules.Model;
 
-namespace DFC.Digital.Repository.SitefinityCMS.Base
+namespace DFC.Digital.Repository.SitefinityCMS
 {
     public interface IRelatedClassificationsRepository
     {

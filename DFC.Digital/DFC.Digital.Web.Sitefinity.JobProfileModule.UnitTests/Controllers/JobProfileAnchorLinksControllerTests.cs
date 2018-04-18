@@ -1,6 +1,6 @@
-﻿using DFC.Digital.Data.Interfaces;
+﻿using DFC.Digital.Core;
+using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Web.Sitefinity.JobProfileModule.Config;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using FakeItEasy;
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using TestStack.FluentMVCTesting;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
+namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
 {
     /// <summary>
     /// Job Profile AnchorLinks Controller tests
@@ -25,7 +25,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
         {
             //Setup the fakes and dummies
             var pageContentServiceFake = A.Fake<IJobProfilePage>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
 
             var dummyAnchorLinks = linksAvailable
@@ -78,7 +78,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
                     .ShouldRenderDefaultView()
                     .WithModel<JobProfileAnchorLinksViewModel>(vm =>
                     {
-                        vm.AnchorLinks.ShouldBeEquivalentTo(dummyAnchorLinks);
+                        vm.AnchorLinks.Should().BeEquivalentTo(dummyAnchorLinks);
                     })
                     .AndNoModelErrors();
 
@@ -102,7 +102,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
         {
             //Setup the fakes and dummies
             var pageContentServiceFake = A.Fake<IJobProfilePage>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
 
             var dummyAnchorLinks = linksAvailable
@@ -153,7 +153,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Tests.Controllers
                 .ShouldRenderDefaultView()
                 .WithModel<JobProfileAnchorLinksViewModel>(vm =>
                 {
-                    vm.AnchorLinks.ShouldBeEquivalentTo(dummyAnchorLinks);
+                    vm.AnchorLinks.Should().BeEquivalentTo(dummyAnchorLinks);
                 })
                 .AndNoModelErrors();
 

@@ -1,17 +1,16 @@
-﻿using System.Text.RegularExpressions;
-using System.Web;
-using DFC.Digital.Core.Utilities;
-using DFC.Digital.Data.Interfaces;
+﻿using DFC.Digital.Core;
 using DFC.Digital.Web.Sitefinity.Widgets.Mvc.Controllers;
 using DFC.Digital.Web.Sitefinity.Widgets.Mvc.Models;
 using FakeItEasy;
 using FluentAssertions;
+using System.Text.RegularExpressions;
+using System.Web;
 using TestStack.FluentMVCTesting;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
+namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests
 {
-    public class BauSearchResultsSignPostControllerTests
+    public class BauSearchResultsSignpostControllerTests
     {
         [Theory]
         [InlineData("")]
@@ -19,14 +18,14 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
         public void IndexTest(string searchTerm)
         {
             //Setup the fakes and dummies
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var contentValue = "http://www.search.com?searcherm={0}";
 
             // Set up calls
             var modelContent = string.Format(contentValue, searchTerm);
 
             //Instantiate & Act
-            var bauSearchResultsSignPostController = new BauSearchResultsSignPostController(loggerFake)
+            var bauSearchResultsSignPostController = new BauSearchResultsSignpostController(loggerFake)
             {
                 BannerContent = contentValue
             };
@@ -38,7 +37,7 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
             indexMethodCall
                 .ShouldRenderDefaultView().WithModel<BauSearchResultsViewModel>(vm =>
                 {
-                    vm.Content.ShouldBeEquivalentTo(modelContent);
+                    vm.Content.Should().BeEquivalentTo(modelContent);
                 })
                 .AndNoModelErrors();
         }
@@ -48,30 +47,29 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.UnitTests.Controllers
         public void IndexSpecialCharactersTest(string searchTerm)
         {
             //Setup the fakes and dummies
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var contentValue = "http://www.search.com?searcherm={0}";
-           
+
             // Set up calls
-            var modelContent = string.Format(contentValue, HttpUtility.UrlEncode(Regex.Replace(searchTerm,
-                Constants.ValidBauSearchCharacters, "")));
+            var modelContent = string.Format(contentValue, HttpUtility.UrlEncode(Regex.Replace(searchTerm, Constants.ValidBAUSearchCharacters, string.Empty)));
 
             //Instantiate & Act
-            var bauSearchResultsSignPostController = new BauSearchResultsSignPostController(loggerFake)
+            using (var bauSearchResultsSignPostController = new BauSearchResultsSignpostController(loggerFake)
             {
                 BannerContent = contentValue
-            };
+            })
+            {
+                //Act
+                var indexMethodCall = bauSearchResultsSignPostController.WithCallTo(c => c.Index(searchTerm));
 
-            //Act
-            var indexMethodCall = bauSearchResultsSignPostController.WithCallTo(c => c.Index(searchTerm));
-
-            //Assert    
-            indexMethodCall
-                .ShouldRenderDefaultView().WithModel<BauSearchResultsViewModel>(vm =>
-                {
-                    vm.Content.ShouldBeEquivalentTo(modelContent);
-                })
-                .AndNoModelErrors();
-
+                //Assert
+                indexMethodCall
+                    .ShouldRenderDefaultView().WithModel<BauSearchResultsViewModel>(vm =>
+                    {
+                        vm.Content.Should().BeEquivalentTo(modelContent);
+                    })
+                    .AndNoModelErrors();
+            }
         }
     }
 }

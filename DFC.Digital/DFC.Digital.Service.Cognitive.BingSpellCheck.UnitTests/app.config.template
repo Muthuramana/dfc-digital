@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <appSettings>
+    <!-- Bing  Cognitive API-->
+    <add key="DFC.Cognitive.BingSpellCheck.ApiKey" value="dummyApiKey" />
+    <add key="DFC.Cognitive.BingSpellCheck.RequestEndPoint" value="https://dummyBing.com" />
+  </appSettings>
+</configuration>

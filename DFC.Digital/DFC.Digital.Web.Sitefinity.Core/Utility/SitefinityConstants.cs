@@ -1,13 +1,20 @@
-﻿namespace DFC.Digital.Web.Sitefinity.Core.Utility
+﻿namespace DFC.Digital.Web.Sitefinity.Core
 {
-    public class SitefinityConstants
+    public sealed class SitefinityConstants
     {
         /// <summary>
         /// The custom widget section
         /// </summary>
         public const string CustomWidgetSection = "DFC Widgets";
 
-        //Global JobProfile Settings Widget
+        /// <summary>
+        /// The custom admin widget section
+        /// </summary>
+        public const string CustomAdminWidgetSection = "DFC Admin Widgets";
+
+        /// <summary>
+        /// Global JobProfile Settings Widget
+        /// </summary>
         public const string JobProfileSettingsWidget = "JobProfile Settings and Preview";
 
         public const string DefaultJobProfileUrlName = "DefaultJobProfileUrlName";

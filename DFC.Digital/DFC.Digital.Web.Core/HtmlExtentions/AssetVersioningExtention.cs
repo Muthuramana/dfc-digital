@@ -1,4 +1,4 @@
-﻿using DFC.Digital.Core.Utilities;
+﻿using DFC.Digital.Core;
 using System;
 using System.Configuration;
 using System.IO;
@@ -6,13 +6,14 @@ using System.Security.Cryptography;
 using System.Web.Caching;
 using System.Web.Mvc;
 
-namespace DFC.Digital.Web.Core.HtmlExtentions
+namespace DFC.Digital.Web.Core
 {
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public static class AssetVersioningExtention
     {
         public static string VersionAssetFile(this HtmlHelper helper, string fileName)
         {
-            var context = helper.ViewContext.RequestContext.HttpContext;
+            var context = helper?.ViewContext.RequestContext.HttpContext;
             string version = null;
 
             if (context.Cache[fileName] == null)

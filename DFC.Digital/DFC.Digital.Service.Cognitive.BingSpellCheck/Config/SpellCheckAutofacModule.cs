@@ -1,6 +1,8 @@
 ﻿using Autofac;
 using Autofac.Extras.DynamicProxy2;
+using DFC.Digital.Core;
 using DFC.Digital.Core.Interceptors;
+using DFC.Digital.Data.Interfaces;
 
 namespace DFC.Digital.Service.Cognitive.BingSpellCheck.Config
 {
@@ -11,8 +13,16 @@ namespace DFC.Digital.Service.Cognitive.BingSpellCheck.Config
             base.Load(builder);
 
             builder.RegisterAssemblyTypes(ThisAssembly).AsImplementedInterfaces()
+                .InstancePerLifetimeScope()
                 .EnableInterfaceInterceptors()
-                .InterceptedBy(InstrumentationInterceptor.NAME, ExceptionInterceptor.NAME)
+                .InterceptedBy(InstrumentationInterceptor.Name, ExceptionInterceptor.Name)
+                ;
+
+            builder.RegisterType<HttpClientService<ISpellcheckService>>()
+                .AsImplementedInterfaces()
+                .SingleInstance()
+                .EnableInterfaceInterceptors()
+                .InterceptedBy(InstrumentationInterceptor.Name, ExceptionInterceptor.Name)
                 ;
         }
     }

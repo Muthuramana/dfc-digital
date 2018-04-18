@@ -1,18 +1,18 @@
 ﻿using AutoMapper;
-using DFC.Digital.Core.Utilities;
+using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Web.Sitefinity.JobProfileModule.Config;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using FakeItEasy;
 using FluentAssertions;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using TestStack.FluentMVCTesting;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
+namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
 {
     public class PsfSearchControllerTests
     {
@@ -22,7 +22,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
         public void IndexTest(bool isContentAuthoringSite)
         {
             var searchServiceFake = A.Fake<ISearchQueryService<JobProfileIndex>>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
             var stateManagerFake = A.Fake<IPreSearchFilterStateManager>(ops => ops.Strict());
             var asyncHelper = new AsyncHelper();
@@ -43,7 +43,8 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             {
                 Title = nameof(JobProfileIndex.Title),
                 AlternativeTitle = new[] { "alt" },
-                SalaryRange = "avg sal",
+                SalaryStarter = 10,
+                SalaryExperienced = 10,
                 Overview = "overview",
                 UrlName = "dummy-url",
                 JobProfileCategoriesWithUrl = new[] { "CatOneURL|Cat One", "CatTwoURL|Cat Two" }
@@ -59,7 +60,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 {
                     ResultItemTitle = dummyIndex.Title,
                     ResultItemAlternativeTitle = string.Join(", ", dummyIndex.AlternativeTitle).Trim().TrimEnd(','),
-                    ResultItemSalaryRange = dummyIndex.SalaryRange,
+                    ResultItemSalaryRange = string.Format(new CultureInfo("en-GB", false), "{0:C0} to {1:C0}", dummyIndex.SalaryStarter, dummyIndex.SalaryExperienced),
                     ResultItemOverview = dummyIndex.Overview,
                     ResultItemUrlName = $"{defaultJobProfilePage}{dummyIndex.UrlName}",
                     Rank = (int)dummySearchResult.Results.First().Rank,
@@ -96,12 +97,12 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                     .WithModel<PsfSearchResultsViewModel>(vm =>
                     {
                         vm.MainPageTitle.Should().Be(psfSearchController.MainPageTitle);
-                        vm.SecondaryText.ShouldBeEquivalentTo(psfSearchController.SecondaryText);
+                        vm.SecondaryText.Should().BeEquivalentTo(psfSearchController.SecondaryText);
                         vm.TotalResultsMessage.Should().Be(expectedTotalMessage);
                         vm.SearchResults.Should().NotBeNull();
-                        vm.SearchResults.ShouldBeEquivalentTo(expectedSearchResultsViewModel);
-                        vm.BackPageUrl.ShouldBeEquivalentTo(psfSearchController.BackPageUrl);
-                        vm.BackPageUrlText.ShouldBeEquivalentTo(psfSearchController.BackPageUrlText);
+                        vm.SearchResults.Should().BeEquivalentTo(expectedSearchResultsViewModel);
+                        vm.BackPageUrl.OriginalString.Should().BeEquivalentTo(psfSearchController.BackPageUrl);
+                        vm.BackPageUrlText.Should().BeEquivalentTo(psfSearchController.BackPageUrlText);
                     })
                     .AndNoModelErrors();
 
@@ -121,7 +122,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
         public void SearchTest(int resultCount, bool notPaging, bool singleSelectValue)
         {
             var searchServiceFake = A.Fake<ISearchQueryService<JobProfileIndex>>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var asyncHelper = new AsyncHelper();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
             var stateManagerFake = A.Fake<IPreSearchFilterStateManager>(ops => ops.Strict());
@@ -141,7 +142,8 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             {
                 Title = nameof(JobProfileIndex.Title),
                 AlternativeTitle = new[] { "alt" },
-                SalaryRange = "avg sal",
+                SalaryStarter = 10,
+                SalaryExperienced = 10,
                 Overview = "overview",
                 UrlName = "dummy-url",
                 JobProfileCategoriesWithUrl = new[] { "CatOneURL|Cat One", "CatTwoURL|Cat Two" }
@@ -167,7 +169,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 {
                     ResultItemTitle = dummyResult.ResultItem.Title,
                     ResultItemAlternativeTitle = string.Join(", ", dummyResult.ResultItem.AlternativeTitle).Trim().TrimEnd(','),
-                    ResultItemSalaryRange = dummyResult.ResultItem.SalaryRange,
+                    ResultItemSalaryRange = string.Format(new CultureInfo("en-GB", false), "{0:C0} to {1:C0}", dummyResult.ResultItem.SalaryStarter, dummyResult.ResultItem.SalaryExperienced),
                     ResultItemOverview = dummyResult.ResultItem.Overview,
                     ResultItemUrlName = $"{defaultJobProfilePage}{dummyResult.ResultItem.UrlName}",
                     Rank = (int)dummyResult.Rank,
@@ -192,7 +194,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 JobProfileDetailsPage = defaultJobProfilePage
             };
 
-            var searchMethodCall = psfSearchController.WithCallTo(c => c.Search(new PSFModel { Section = new PSFSection { SingleSelectedValue = singleSelectValue ? nameof(PSFSection.SingleSelectedValue) : string.Empty, Options = new List<PSFOption>() } }, 1, notPaging));
+            var searchMethodCall = psfSearchController.WithCallTo(c => c.Search(new PsfModel { Section = new PsfSection { SingleSelectedValue = singleSelectValue ? nameof(PsfSection.SingleSelectedValue) : string.Empty, Options = new List<PsfOption>() } }, 1, notPaging));
 
             //Assert
             searchMethodCall
@@ -200,12 +202,12 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 .WithModel<PsfSearchResultsViewModel>(vm =>
                 {
                     vm.MainPageTitle.Should().Be(psfSearchController.MainPageTitle);
-                    vm.SecondaryText.ShouldBeEquivalentTo(psfSearchController.SecondaryText);
+                    vm.SecondaryText.Should().BeEquivalentTo(psfSearchController.SecondaryText);
                     vm.TotalResultsMessage.Should().Be(expectedTotalMessage);
                     vm.SearchResults.Should().NotBeNull();
-                    vm.SearchResults.ShouldBeEquivalentTo(expectedSearchResultsViewModel);
-                    vm.BackPageUrl.ShouldBeEquivalentTo(psfSearchController.BackPageUrl);
-                    vm.BackPageUrlText.ShouldBeEquivalentTo(psfSearchController.BackPageUrlText);
+                    vm.SearchResults.Should().BeEquivalentTo(expectedSearchResultsViewModel);
+                    vm.BackPageUrl.OriginalString.Should().BeEquivalentTo(psfSearchController.BackPageUrl);
+                    vm.BackPageUrlText.Should().BeEquivalentTo(psfSearchController.BackPageUrlText);
                 })
                 .AndNoModelErrors();
 
@@ -229,7 +231,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
         public void IndexSearchTest(int resultCount, int pageNumber, bool hasNextPage, bool hasPreviousPage)
         {
             var searchServiceFake = A.Fake<ISearchQueryService<JobProfileIndex>>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var asyncHelper = new AsyncHelper();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
             var stateManagerFake = A.Fake<IPreSearchFilterStateManager>(ops => ops.Strict());
@@ -249,7 +251,8 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             {
                 Title = nameof(JobProfileIndex.Title),
                 AlternativeTitle = new[] { "alt" },
-                SalaryRange = "avg sal",
+                SalaryStarter = 10,
+                SalaryExperienced = 10,
                 Overview = "overview",
                 UrlName = "dummy-url",
                 JobProfileCategoriesWithUrl = new[] { "CatOneURL|Cat One", "CatTwoURL|Cat Two" }
@@ -275,7 +278,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 {
                     ResultItemTitle = dummyResult.ResultItem.Title,
                     ResultItemAlternativeTitle = string.Join(", ", dummyResult.ResultItem.AlternativeTitle).Trim().TrimEnd(','),
-                    ResultItemSalaryRange = dummyResult.ResultItem.SalaryRange,
+                    ResultItemSalaryRange = string.Format(new CultureInfo("en-GB", false), "{0:C0} to {1:C0}", dummyResult.ResultItem.SalaryStarter, dummyResult.ResultItem.SalaryExperienced),
                     ResultItemOverview = dummyResult.ResultItem.Overview,
                     ResultItemUrlName = $"{defaultJobProfilePage}{dummyResult.ResultItem.UrlName}",
                     Rank = (int)dummyResult.Rank,
@@ -299,7 +302,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 JobProfileDetailsPage = defaultJobProfilePage
             };
 
-            var searchMethodCall = psfSearchController.WithCallTo(c => c.Index(new PSFModel { Sections = new List<PSFSection>(), Section = new PSFSection { Options = new List<PSFOption>() } }, new PsfSearchResultsViewModel(), pageNumber));
+            var searchMethodCall = psfSearchController.WithCallTo(c => c.Index(new PsfModel { Sections = new List<PsfSection>(), Section = new PsfSection { Options = new List<PsfOption>() } }, new PsfSearchResultsViewModel(), pageNumber));
 
             //Assert
             searchMethodCall
@@ -307,14 +310,14 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 .WithModel<PsfSearchResultsViewModel>(vm =>
                 {
                     vm.MainPageTitle.Should().Be(psfSearchController.MainPageTitle);
-                    vm.SecondaryText.ShouldBeEquivalentTo(psfSearchController.SecondaryText);
+                    vm.SecondaryText.Should().BeEquivalentTo(psfSearchController.SecondaryText);
                     vm.TotalResultsMessage.Should().Be(expectedTotalMessage);
                     vm.SearchResults.Should().NotBeNull();
-                    vm.SearchResults.ShouldBeEquivalentTo(expectedSearchResultsViewModel);
-                    vm.BackPageUrl.ShouldBeEquivalentTo(psfSearchController.BackPageUrl);
-                    vm.BackPageUrlText.ShouldBeEquivalentTo(psfSearchController.BackPageUrlText);
-                    vm.HasNexPage.ShouldBeEquivalentTo(hasNextPage);
-                    vm.HasPreviousPage.ShouldBeEquivalentTo(hasPreviousPage);
+                    vm.SearchResults.Should().BeEquivalentTo(expectedSearchResultsViewModel);
+                    vm.BackPageUrl.OriginalString.Should().BeEquivalentTo(psfSearchController.BackPageUrl);
+                    vm.BackPageUrlText.Should().BeEquivalentTo(psfSearchController.BackPageUrlText);
+                    vm.HasNextPage.Should().Be(hasNextPage);
+                    vm.HasPreviousPage.Should().Be(hasPreviousPage);
                 })
                 .AndNoModelErrors();
 
@@ -333,7 +336,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
         public void IndexSearchPagingTest(int resultCount)
         {
             var searchServiceFake = A.Fake<ISearchQueryService<JobProfileIndex>>(ops => ops.Strict());
-            var loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
             var asyncHelper = new AsyncHelper();
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
             var defaultJobProfilePage = "/jobprofile-details/";
@@ -353,7 +356,8 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             {
                 Title = nameof(JobProfileIndex.Title),
                 AlternativeTitle = new[] { "alt" },
-                SalaryRange = "avg sal",
+                SalaryStarter = 10,
+                SalaryExperienced = 10,
                 Overview = "overview",
                 UrlName = "dummy-url",
                 JobProfileCategoriesWithUrl = new[] { "CatOneURL|Cat One", "CatTwoURL|Cat Two" }
@@ -379,7 +383,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 {
                     ResultItemTitle = dummyResult.ResultItem.Title,
                     ResultItemAlternativeTitle = string.Join(", ", dummyResult.ResultItem.AlternativeTitle).Trim().TrimEnd(','),
-                    ResultItemSalaryRange = dummyResult.ResultItem.SalaryRange,
+                    ResultItemSalaryRange = string.Format(new CultureInfo("en-GB", false), "{0:C0} to {1:C0}", dummyResult.ResultItem.SalaryStarter, dummyResult.ResultItem.SalaryExperienced),
                     ResultItemOverview = dummyResult.ResultItem.Overview,
                     ResultItemUrlName = $"{defaultJobProfilePage}{dummyResult.ResultItem.UrlName}",
                     Rank = (int)dummyResult.Rank,
@@ -403,7 +407,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 JobProfileDetailsPage = defaultJobProfilePage
             };
 
-            var searchMethodCall = psfSearchController.WithCallTo(c => c.Index(new PSFModel { Section = new PSFSection { Options = new List<PSFOption>() } }, new PsfSearchResultsViewModel(), 1));
+            var searchMethodCall = psfSearchController.WithCallTo(c => c.Index(new PsfModel { Section = new PsfSection { Options = new List<PsfOption>() } }, new PsfSearchResultsViewModel(), 1));
 
             //Assert
             searchMethodCall
@@ -411,12 +415,12 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 .WithModel<PsfSearchResultsViewModel>(vm =>
                 {
                     vm.MainPageTitle.Should().Be(psfSearchController.MainPageTitle);
-                    vm.SecondaryText.ShouldBeEquivalentTo(psfSearchController.SecondaryText);
+                    vm.SecondaryText.Should().BeEquivalentTo(psfSearchController.SecondaryText);
                     vm.TotalResultsMessage.Should().Be(expectedTotalMessage);
                     vm.SearchResults.Should().NotBeNull();
-                    vm.SearchResults.ShouldBeEquivalentTo(expectedSearchResultsViewModel);
-                    vm.BackPageUrl.ShouldBeEquivalentTo(psfSearchController.BackPageUrl);
-                    vm.BackPageUrlText.ShouldBeEquivalentTo(psfSearchController.BackPageUrlText);
+                    vm.SearchResults.Should().BeEquivalentTo(expectedSearchResultsViewModel);
+                    vm.BackPageUrl.OriginalString.Should().BeEquivalentTo(psfSearchController.BackPageUrl);
+                    vm.BackPageUrlText.Should().BeEquivalentTo(psfSearchController.BackPageUrlText);
                 })
                 .AndNoModelErrors();
 

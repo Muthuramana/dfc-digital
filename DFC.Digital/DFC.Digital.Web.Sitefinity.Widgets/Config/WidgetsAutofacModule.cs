@@ -3,16 +3,17 @@ using Autofac.Extras.DynamicProxy2;
 using Autofac.Integration.Mvc;
 using DFC.Digital.Core.Interceptors;
 
-namespace DFC.Digital.Web.Sitefinity.Widgets.App_Start
+namespace DFC.Digital.Web.Sitefinity.Widgets
 {
     public class WidgetsAutofacModule : Module
     {
         protected override void Load(ContainerBuilder builder)
         {
             base.Load(builder);
-            builder.RegisterAssemblyTypes().AsImplementedInterfaces()
+            builder.RegisterAssemblyTypes(ThisAssembly).AsImplementedInterfaces()
+                .InstancePerLifetimeScope()
                 .EnableInterfaceInterceptors()
-                .InterceptedBy(InstrumentationInterceptor.NAME, ExceptionInterceptor.NAME);
+                .InterceptedBy(InstrumentationInterceptor.Name, ExceptionInterceptor.Name);
 
             // Note that ASP.NET MVC requests controllers by their concrete types,
             // so registering them As<IController>() is incorrect.
@@ -21,10 +22,14 @@ namespace DFC.Digital.Web.Sitefinity.Widgets.App_Start
             // InstancePerHttpRequest() - ASP.NET MVC will throw an exception if
             // you try to reuse a controller instance for multiple requests.
             builder.RegisterControllers(ThisAssembly)
+                   .InstancePerRequest()
 
                    //.EnableClassInterceptors()
-                   //.InstancePerRequest()
                    ;
+
+            // OPTIONAL: Register model binders that require DI.
+            builder.RegisterModelBinders(ThisAssembly);
+            builder.RegisterModelBinderProvider();
         }
     }
 }

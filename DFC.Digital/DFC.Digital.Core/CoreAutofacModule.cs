@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Castle.DynamicProxy;
+using DFC.Digital.Core.Configuration;
 using DFC.Digital.Core.Interceptors;
 
 namespace DFC.Digital.Core
@@ -9,11 +10,16 @@ namespace DFC.Digital.Core
         protected override void Load(ContainerBuilder builder)
         {
             base.Load(builder);
-            builder.RegisterAssemblyTypes(ThisAssembly).AsImplementedInterfaces();
+            builder.RegisterAssemblyTypes(ThisAssembly).AsImplementedInterfaces().InstancePerLifetimeScope();
+
+            //It is necessary to have a singleton of this policy to ensure the policies works accross multiple requests.
+            builder.RegisterType<TolerancePolicy>().AsImplementedInterfaces().SingleInstance();
+            builder.RegisterType<AppConfigConfigurationProvider>().AsImplementedInterfaces().SingleInstance();
+            builder.RegisterType<TransientFaultHandlingStrategy>().SingleInstance();
 
             //Register Interceptors
-            builder.RegisterType<InstrumentationInterceptor>().AsSelf().Named<IInterceptor>(InstrumentationInterceptor.NAME);
-            builder.RegisterType<ExceptionInterceptor>().AsSelf().Named<IInterceptor>(ExceptionInterceptor.NAME);
+            builder.RegisterType<InstrumentationInterceptor>().AsSelf().Named<IInterceptor>(InstrumentationInterceptor.Name).InstancePerLifetimeScope();
+            builder.RegisterType<ExceptionInterceptor>().AsSelf().Named<IInterceptor>(ExceptionInterceptor.Name).InstancePerLifetimeScope();
         }
     }
 }

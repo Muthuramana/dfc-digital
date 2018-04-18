@@ -1,11 +1,13 @@
-﻿using DFC.Digital.Core.Utilities;
+﻿using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
 using DFC.Digital.Service.GovUkNotify.Base;
 using Notify.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace DFC.Digital.Service.GovUkNotify
 {
@@ -14,7 +16,7 @@ namespace DFC.Digital.Service.GovUkNotify
     /// </summary>
     /// <seealso cref="DFC.Digital.Data.Interfaces.IGovUkNotify" />
     /// <seealso />
-    public class GovUkNotifyService : IGovUkNotify
+    public class GovUkNotifyService : IGovUkNotify, IServiceStatus
     {
         private readonly IApplicationLogger applicationLogger;
         private readonly IGovUkNotifyClientProxy clientProxy;
@@ -24,6 +26,41 @@ namespace DFC.Digital.Service.GovUkNotify
             this.applicationLogger = applicationLogger;
             this.clientProxy = clientProxy;
         }
+
+        #region Implement of IServiceStatus
+        private static string ServiceName => "Notification Service";
+
+        public Task<ServiceStatus> GetCurrentStatusAsync()
+        {
+            var serviceStatus = new ServiceStatus { Name = ServiceName, Status = ServiceState.Red, Notes = string.Empty };
+
+            var emailAddress = "simulate-delivered@notifications.service.gov.uk";
+            serviceStatus.CheckParametersUsed = $"Email used - {emailAddress}";
+            var vocPersonalisation = new VocSurveyPersonalisation();
+            vocPersonalisation.Personalisation.Add("jpprofile", "ServiceCheck");
+            vocPersonalisation.Personalisation.Add("clientId", "ServiceCheck ClientId");
+            try
+            {
+                var response = clientProxy.SendEmail(ConfigurationManager.AppSettings[Constants.GovUkNotifyApiKey], emailAddress, ConfigurationManager.AppSettings[Constants.GovUkNotifyTemplateId], this.Convert(vocPersonalisation));
+
+                //Got a response back
+                serviceStatus.Status = ServiceState.Amber;
+                serviceStatus.Notes = "Success Response";
+
+                if (!string.IsNullOrEmpty(response?.id))
+                {
+                    serviceStatus.Status = ServiceState.Green;
+                    serviceStatus.Notes = string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                serviceStatus.Notes = $"{Constants.ServiceStatusFailedCheckLogsMessage} - {applicationLogger.LogExceptionWithActivityId(Constants.ServiceStatusFailedLogMessage, ex)}";
+            }
+
+            return Task.FromResult(serviceStatus);
+        }
+        #endregion
 
         /// <summary>
         /// Submits the email.
@@ -35,9 +72,7 @@ namespace DFC.Digital.Service.GovUkNotify
         {
             try
             {
-                var templateId = ConfigurationManager.AppSettings[Constants.GovUkNotifyTemplateId];
-                var apiKey = ConfigurationManager.AppSettings[Constants.GovUkNotifyAPIKey];
-                var response = clientProxy.SendEmail(apiKey, emailAddress, templateId, this.Convert(vocPersonalisation));
+                var response = clientProxy.SendEmail(ConfigurationManager.AppSettings[Constants.GovUkNotifyApiKey], emailAddress, ConfigurationManager.AppSettings[Constants.GovUkNotifyTemplateId], this.Convert(vocPersonalisation));
                 return !string.IsNullOrEmpty(response?.id);
             }
             catch (NotifyClientException ex)
@@ -49,16 +84,23 @@ namespace DFC.Digital.Service.GovUkNotify
 
         public Dictionary<string, dynamic> Convert(VocSurveyPersonalisation vocSurveyPersonalisation)
         {
-            foreach (var item in vocSurveyPersonalisation.Personalisation.ToArray())
+            if (vocSurveyPersonalisation?.Personalisation != null)
             {
-                if (string.IsNullOrEmpty(item.Value))
+                foreach (var item in vocSurveyPersonalisation?.Personalisation?.ToArray())
                 {
-                    vocSurveyPersonalisation.Personalisation[item.Key] = Constants.Unknown;
+                    if (string.IsNullOrEmpty(item.Value) && vocSurveyPersonalisation != null)
+                    {
+                        vocSurveyPersonalisation.Personalisation[item.Key] = Constants.Unknown;
+                    }
                 }
+
+                return vocSurveyPersonalisation?.Personalisation
+                    .ToDictionary<KeyValuePair<string, string>, string, dynamic>(
+                        vocObj => vocObj.Key,
+                        vocObj => vocObj.Value);
             }
 
-            return vocSurveyPersonalisation.Personalisation
-                .ToDictionary<KeyValuePair<string, string>, string, dynamic>(vocObj => vocObj.Key, vocObj => vocObj.Value);
+            return null;
         }
     }
 }

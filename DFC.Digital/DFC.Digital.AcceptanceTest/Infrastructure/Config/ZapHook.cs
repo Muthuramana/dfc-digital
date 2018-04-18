@@ -1,17 +1,19 @@
-﻿using OWASPZAPDotNetAPI;
+﻿using DFC.Digital.AutomationTest.Utilities;
+using OWASPZAPDotNetAPI;
 using System;
 using System.Configuration;
 using System.IO;
 using System.Threading;
 using TechTalk.SpecFlow;
 
-namespace DFC.Digital.AcceptanceTest.Infrastructure.Config
+namespace DFC.Digital.AcceptanceTest.Infrastructure
 {
     [Binding]
-    public class ZapHook
+    public static class ZapHook
     {
         // For additional details on SpecFlow hooks see http://go.specflow.org/doc-hooks
         private static readonly string ZapApiKey = ConfigurationManager.AppSettings["zapApiKey"];
+
         private static readonly string ZapUrl = ConfigurationManager.AppSettings["zapHost"];
         private static readonly string ZapPort = ConfigurationManager.AppSettings["zapPort"];
         private static readonly string ReportPath = ConfigurationManager.AppSettings["zapReportPath"];
@@ -52,9 +54,6 @@ namespace DFC.Digital.AcceptanceTest.Infrastructure.Config
 
                 SaveSession(reportFilename);
                 GenerateHtmlReport(reportFilename);
-                CheckForHighOrMediumAlerts();
-
-                zapClient.Dispose();
             }
         }
 
@@ -101,7 +100,7 @@ namespace DFC.Digital.AcceptanceTest.Infrastructure.Config
 
             if (Convert.ToInt32(high) > 0 || Convert.ToInt32(medium) > 0)
             {
-                throw new Exception("High or Medium alert has been found");
+                throw new TestException("High or Medium alert has been found");
             }
         }
     }

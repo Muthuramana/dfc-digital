@@ -1,4 +1,4 @@
-﻿using DFC.Digital.Core.Utilities;
+﻿using DFC.Digital.Core;
 using DFC.Digital.Data.Model;
 using DFC.Digital.Service.CourseSearchProvider.CourseSearchServiceApi;
 using System;
@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 
-namespace DFC.Digital.Service.CourseSearchProvider.Converters
+namespace DFC.Digital.Service.CourseSearchProvider
 {
     internal static class MessageConverter
     {

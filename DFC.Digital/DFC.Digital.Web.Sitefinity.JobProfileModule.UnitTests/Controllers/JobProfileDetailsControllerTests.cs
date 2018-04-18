@@ -1,19 +1,17 @@
 ﻿using AutoMapper;
-using DFC.Digital.Core.Utilities;
+using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
-using DFC.Digital.Web.Sitefinity.Core.Interface;
-using DFC.Digital.Web.Sitefinity.JobProfileModule.Config;
+using DFC.Digital.Web.Sitefinity.Core;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using FakeItEasy;
 using FluentAssertions;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using TestStack.FluentMVCTesting;
 using Xunit;
 
-namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
+namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
 {
     /// <summary>
     ///     Job Profile Details Controller tests
@@ -21,14 +19,13 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
     public class JobProfileDetailsControllerTests
     {
         private readonly IAsyncHelper asyncHelper = new AsyncHelper();
-        private readonly decimal experiencedSalary = 200;
+        private readonly double experiencedSalary = 200;
         private readonly IGovUkNotify govUkNotifyFake = A.Fake<IGovUkNotify>(ops => ops.Strict());
         private readonly IApplicationLogger loggerFake = A.Fake<IApplicationLogger>(ops => ops.Strict());
         private readonly IJobProfileRepository repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
-        private readonly ISalaryCalculator salaryCalculator = A.Fake<ISalaryCalculator>(ops => ops.Strict());
-        private readonly ISalaryService salaryService = A.Fake<ISalaryService>(ops => ops.Strict());
         private readonly ISitefinityPage sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
-        private readonly decimal starterSalary = 100;
+        private readonly ISearchQueryService<JobProfileIndex> searchQueryService = A.Fake<ISearchQueryService<JobProfileIndex>>(ops => ops.Strict());
+        private readonly double starterSalary = 100;
         private readonly IWebAppContext webAppContextFake = A.Fake<IWebAppContext>();
         private JobProfile dummyJobProfile;
         private MapperConfiguration mapperCfg;
@@ -47,40 +44,44 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             A.CallTo(() => webAppContextFake.IsContentAuthoringSite).Returns(inContentAuthoringSite);
 
             //Instantiate & Act
-            var jobprofileController = new JobProfileDetailsController(
-                webAppContextFake, repositoryFake, loggerFake, sitefinityPage, mapperCfg.CreateMapper(), salaryService, salaryCalculator, asyncHelper);
-
-            //Act
-            var indexMethodCall = jobprofileController.WithCallTo(c => c.Index());
-
-            //Assert
-            //should get back a default profile for design mode
-            if (inContentAuthoringSite)
+            using (var jobprofileController = new JobProfileDetailsController(
+                webAppContextFake, repositoryFake, loggerFake, sitefinityPage, mapperCfg.CreateMapper(), asyncHelper, searchQueryService))
             {
-                indexMethodCall
-                    .ShouldRenderDefaultView()
-                    .WithModel<JobProfileDetailsViewModel>(vm =>
-                    {
-                        vm.SalaryText.ShouldBeEquivalentTo(jobprofileController.SalaryText);
-                        vm.HoursText.ShouldBeEquivalentTo(jobprofileController.HoursText);
-                        vm.MaxAndMinHoursAreBlankText.ShouldBeEquivalentTo(jobprofileController
-                            .MaxAndMinHoursAreBlankText);
-                        vm.HoursTimePeriodText.ShouldBeEquivalentTo(jobprofileController.HoursTimePeriodText);
-                        vm.AlternativeTitle.ShouldBeEquivalentTo(dummyJobProfile.AlternativeTitle);
-                        vm.Overview.ShouldBeEquivalentTo(dummyJobProfile.Overview);
-                        vm.Title.ShouldBeEquivalentTo(dummyJobProfile.Title);
-                        vm.MaximumHours.ShouldBeEquivalentTo(dummyJobProfile.MaximumHours);
-                        vm.MinimumHours.ShouldBeEquivalentTo(dummyJobProfile.MinimumHours);
-                        vm.SalaryStarter.ShouldBeEquivalentTo(starterSalary);
-                        vm.SalaryExperienced.ShouldBeEquivalentTo(experiencedSalary);
-                    })
-                    .AndNoModelErrors();
+                //Act
+                var indexMethodCall = jobprofileController.WithCallTo(c => c.Index());
 
-                AssertActions(isContentPreviewMode);
-            }
-            else
-            {
-                indexMethodCall.ShouldRedirectTo("\\");
+                //Assert
+                //should get back a default profile for design mode
+                if (inContentAuthoringSite)
+                {
+                    indexMethodCall
+                        .ShouldRenderDefaultView()
+                        .WithModel<JobProfileDetailsViewModel>(vm =>
+                        {
+                            vm.SalaryText.Should().BeEquivalentTo(jobprofileController.SalaryText);
+                            vm.HoursText.Should().BeEquivalentTo(jobprofileController.HoursText);
+                            vm.MaxAndMinHoursAreBlankText.Should().BeEquivalentTo(jobprofileController
+                                .MaxAndMinHoursAreBlankText);
+                            vm.HoursTimePeriodText.Should().BeEquivalentTo(jobprofileController.HoursTimePeriodText);
+                            vm.AlternativeTitle.Should().BeEquivalentTo(dummyJobProfile.AlternativeTitle);
+                            vm.Overview.Should().BeEquivalentTo(dummyJobProfile.Overview);
+                            vm.Title.Should().BeEquivalentTo(dummyJobProfile.Title);
+                            vm.MaximumHours.Should().Be(dummyJobProfile.MaximumHours.ToString());
+                            vm.MinimumHours.Should().BeEquivalentTo(dummyJobProfile.MinimumHours.ToString());
+                            vm.WorkingHoursDetails.Should().BeEquivalentTo(dummyJobProfile.WorkingHoursDetails);
+                            vm.WorkingPatternDetails.Should().BeEquivalentTo(dummyJobProfile.WorkingPatternDetails);
+                            vm.WorkingPattern.Should().BeEquivalentTo(dummyJobProfile.WorkingPattern);
+                            vm.SalaryStarter.Should().Be(starterSalary);
+                            vm.SalaryExperienced.Should().Be(experiencedSalary);
+                        })
+                        .AndNoModelErrors();
+
+                    AssertActions(isContentPreviewMode);
+                }
+                else
+                {
+                    indexMethodCall.ShouldRedirectTo("\\");
+                }
             }
         }
 
@@ -95,137 +96,51 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             SetUpDependeciesAndCall(validJobProfile, isContentPreviewMode);
 
             //Instantiate & Act
-            var jobprofileController = new JobProfileDetailsController(
-                webAppContextFake, repositoryFake, loggerFake, sitefinityPage, mapperCfg.CreateMapper(), salaryService, salaryCalculator, asyncHelper);
-
-            //Act
-            var indexWithUrlNameMethodCall = jobprofileController.WithCallTo(c => c.Index(urlName));
-
-            if (validJobProfile)
+            using (var jobprofileController = new JobProfileDetailsController(
+                webAppContextFake, repositoryFake, loggerFake, sitefinityPage, mapperCfg.CreateMapper(), asyncHelper, searchQueryService))
             {
-                indexWithUrlNameMethodCall
-                    .ShouldRenderDefaultView()
-                    .WithModel<JobProfileDetailsViewModel>(vm =>
-                    {
-                        vm.SalaryText.ShouldBeEquivalentTo(jobprofileController.SalaryText);
-                        vm.HoursText.ShouldBeEquivalentTo(jobprofileController.HoursText);
-                        vm.MaxAndMinHoursAreBlankText.ShouldBeEquivalentTo(jobprofileController
-                            .MaxAndMinHoursAreBlankText);
-                        vm.HoursTimePeriodText.ShouldBeEquivalentTo(jobprofileController.HoursTimePeriodText);
-                        vm.AlternativeTitle.ShouldBeEquivalentTo(dummyJobProfile.AlternativeTitle);
-                        vm.SalaryRange.ShouldBeEquivalentTo(dummyJobProfile.SalaryRange);
-                        vm.Overview.ShouldBeEquivalentTo(dummyJobProfile.Overview);
-                        vm.Title.ShouldBeEquivalentTo(dummyJobProfile.Title);
-                        vm.MaximumHours.ShouldBeEquivalentTo(dummyJobProfile.MaximumHours);
-                        vm.MinimumHours.ShouldBeEquivalentTo(dummyJobProfile.MinimumHours);
-                    })
-                    .AndNoModelErrors();
-            }
-            else
-            {
-                indexWithUrlNameMethodCall.ShouldGiveHttpStatus(404);
-            }
+                //Act
+                var indexWithUrlNameMethodCall = jobprofileController.WithCallTo(c => c.Index(urlName));
 
-            if (!isContentPreviewMode)
-            {
-                A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).MustHaveHappened();
-            }
-            else
-            {
-                A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).MustHaveHappened();
-            }
-
-            A.CallTo(() => webAppContextFake.SetVocCookie(Constants.VocPersonalisationCookieName, A<VocSurveyPersonalisation>.That.Matches(m => m.Personalisation.ContainsValue(urlName)))).MustHaveHappened();
-        }
-
-        //The tests above are already testing the behaviour of the widget in diffent modes, content authoring, valid\invalid job profiles
-        //This is just to check the signposting logic in the controller
-        [Theory]
-        [InlineData("BetaJPUrl", false, "")]
-        [InlineData("BetaJPUrl", true, "")]
-        [InlineData("BetaJPUrl", true, "BAUJPUrl")]
-        public void SignPostingUrlTest(string urlName, bool doesNotExistInBau, string overRideBauurl)
-        {
-            //Set up comman call
-            SetUpDependeciesAndCall(true, false);
-
-            dummyJobProfile.BAUSystemOverrideUrl = overRideBauurl;
-            dummyJobProfile.DoesNotExistInBAU = doesNotExistInBau;
-            dummyJobProfile.UrlName = urlName;
-
-            //Instantiate & Act
-            var jobprofileController = new JobProfileDetailsController(
-                webAppContextFake, repositoryFake, loggerFake, sitefinityPage, mapperCfg.CreateMapper(), salaryService, salaryCalculator, asyncHelper)
-            {
-                DisplayMatchingJPInBAUSignPost = true,
-                DisplayNoMatchingJPInBAUSignPost = true
-            };
-
-            //Act
-            var indexWithUrlNameMethodCall = jobprofileController.WithCallTo(c => c.Index(urlName));
-
-            string expectedJpurl;
-
-            if (doesNotExistInBau)
-            {
-                //Does not exist in BAU point to home
-                expectedJpurl = "job-profiles/home";
-            }
-            else
-            {
-                if (overRideBauurl == string.Empty)
+                if (validJobProfile)
                 {
-                    expectedJpurl = $"job-profiles/{urlName}";
+                    indexWithUrlNameMethodCall
+                        .ShouldRenderDefaultView()
+                        .WithModel<JobProfileDetailsViewModel>(vm =>
+                        {
+                            vm.SalaryText.Should().BeEquivalentTo(jobprofileController.SalaryText);
+                            vm.HoursText.Should().BeEquivalentTo(jobprofileController.HoursText);
+                            vm.MaxAndMinHoursAreBlankText.Should().BeEquivalentTo(jobprofileController
+                                .MaxAndMinHoursAreBlankText);
+                            vm.HoursTimePeriodText.Should().BeEquivalentTo(jobprofileController.HoursTimePeriodText);
+                            vm.AlternativeTitle.Should().BeEquivalentTo(dummyJobProfile.AlternativeTitle);
+                            vm.SalaryRange.Should().BeEquivalentTo(dummyJobProfile.SalaryRange);
+                            vm.Overview.Should().BeEquivalentTo(dummyJobProfile.Overview);
+                            vm.Title.Should().BeEquivalentTo(dummyJobProfile.Title);
+                            vm.MaximumHours.Should().BeEquivalentTo(dummyJobProfile.MaximumHours.ToString());
+                            vm.MinimumHours.Should().BeEquivalentTo(dummyJobProfile.MinimumHours.ToString());
+                            vm.WorkingHoursDetails.Should().BeEquivalentTo(dummyJobProfile.WorkingHoursDetails);
+                            vm.WorkingPatternDetails.Should().BeEquivalentTo(dummyJobProfile.WorkingPatternDetails);
+                            vm.WorkingPattern.Should().BeEquivalentTo(dummyJobProfile.WorkingPattern);
+                            vm.SalaryStarter.Should().Be(starterSalary);
+                            vm.SalaryExperienced.Should().Be(experiencedSalary);
+                        })
+                        .AndNoModelErrors();
                 }
                 else
                 {
-                    expectedJpurl = $"job-profiles/{overRideBauurl}";
+                    indexWithUrlNameMethodCall.ShouldGiveHttpStatus(404);
+                }
+
+                if (!isContentPreviewMode)
+                {
+                    A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).MustHaveHappened();
+                }
+                else
+                {
+                    A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).MustHaveHappened();
                 }
             }
-
-            //Assert
-            indexWithUrlNameMethodCall.ShouldRenderDefaultView()
-                .WithModel<JobProfileDetailsViewModel>(vm =>
-                {
-                    vm.DisplaySignPostingToBAU.ShouldBeEquivalentTo(true);
-                    vm.SignPostingHTML.Should().Contain(expectedJpurl);
-                }).AndNoModelErrors();
-        }
-
-        //The tests above are already testing the behaviour of the widget in diffent modes, content authoring, valid\invalid job profiles
-        //This is just to check the signposting logic in the controller
-        [Theory]
-        [InlineData(true, true, true)]
-        [InlineData(false, false, true)]
-        [InlineData(true, false, true)]
-        [InlineData(false, true, true)]
-        [InlineData(true, true, false)]
-        [InlineData(false, false, false)]
-        [InlineData(true, false, false)]
-        [InlineData(false, true, false)]
-        public void SignPostingEnabledTest(bool matchingSignPostingEnabled, bool nonMatchingSignPostingEnabled, bool doesNotExistInBau)
-        {
-            SetUpDependeciesAndCall(true, false);
-
-            //Instantiate & Act
-            var jobprofileController = new JobProfileDetailsController(
-                webAppContextFake, repositoryFake, loggerFake, sitefinityPage, mapperCfg.CreateMapper(), salaryService, salaryCalculator, asyncHelper)
-            {
-                DisplayMatchingJPInBAUSignPost = matchingSignPostingEnabled,
-                DisplayNoMatchingJPInBAUSignPost = nonMatchingSignPostingEnabled
-            };
-
-            dummyJobProfile.DoesNotExistInBAU = doesNotExistInBau;
-
-            //Act
-            var indexWithUrlNameMethodCall = jobprofileController.WithCallTo(c => c.Index("TestUrl"));
-
-            //Assert
-            indexWithUrlNameMethodCall.ShouldRenderDefaultView()
-                .WithModel<JobProfileDetailsViewModel>(vm =>
-                {
-                    vm.DisplaySignPostingToBAU.ShouldBeEquivalentTo((nonMatchingSignPostingEnabled && doesNotExistInBau) || (matchingSignPostingEnabled && !doesNotExistInBau));
-                }).AndNoModelErrors();
         }
 
         private void SetUpDependeciesAndCall(bool validJobProfile, bool isContentPreviewMode)
@@ -241,29 +156,44 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                     Overview = nameof(JobProfile.Overview),
                     Title = nameof(JobProfile.Title),
                     MaximumHours = 40,
-                    MinimumHours = 10
+                    MinimumHours = 10,
+                    UrlName = nameof(JobProfile.UrlName),
+                    WorkingHoursDetails = nameof(JobProfile.WorkingHoursDetails),
+                    WorkingPattern = nameof(JobProfile.WorkingPattern),
+                    WorkingPatternDetails = nameof(JobProfile.WorkingPatternDetails)
                 }
                 : null;
 
-            var dummySalary = new JobProfileSalary
+            var dummyIndex = new JobProfileIndex
             {
-                Deciles = new Dictionary<int, decimal>
-                {
-                    { 10, 100 },
-                    { 90, 200 }
-                }
+                Title = nameof(JobProfileIndex.Title),
+                AlternativeTitle = new[] { "alt" },
+                SalaryStarter = starterSalary,
+                SalaryExperienced = experiencedSalary,
+                Overview = "overview",
+                UrlName = "dummy-url",
+                JobProfileCategoriesWithUrl = new[] { "CatOneURL|Cat One", "CatTwoURL|Cat Two" }
             };
+            var resultsCount = 1;
+            var dummySearchResult = A.Dummy<SearchResult<JobProfileIndex>>();
+            dummySearchResult.Count = resultsCount;
+            dummySearchResult.Results = A.CollectionOfDummy<SearchResultItem<JobProfileIndex>>(resultsCount);
+            var rawResultItems = new List<SearchResultItem<JobProfileIndex>>
+            {
+                new SearchResultItem<JobProfileIndex> { ResultItem = dummyIndex }
+            };
+            dummySearchResult.Results = rawResultItems;
 
             // Set up calls
+            A.CallTo(() => searchQueryService.SearchAsync(A<string>._, A<SearchProperties>._)).Returns(dummySearchResult);
             A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).Returns(dummyJobProfile);
             A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).Returns(dummyJobProfile);
             A.CallTo(() => webAppContextFake.IsContentPreviewMode).Returns(isContentPreviewMode);
             A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._))
                 .ReturnsLazily((string defaultProfile) => defaultProfile);
             A.CallTo(() => govUkNotifyFake.SubmitEmail(A<string>._, null)).Returns(false);
-            A.CallTo(() => salaryService.GetSalaryBySocAsync(A<string>._)).Returns(Task.FromResult(dummySalary));
-            A.CallTo(() => salaryCalculator.GetStarterSalary(A<JobProfileSalary>._)).Returns(starterSalary);
-            A.CallTo(() => salaryCalculator.GetExperiencedSalary(A<JobProfileSalary>._)).Returns(experiencedSalary);
+            A.CallTo(() => webAppContextFake.SetVocCookie(Constants.VocPersonalisationCookieName, A<string>._)).DoesNothing();
+            A.CallTo(() => loggerFake.Trace(A<string>._)).DoesNothing();
         }
 
         private void AssertActions(bool isContentPreviewMode)
@@ -272,9 +202,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
             {
                 A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).MustHaveHappened();
                 A.CallTo(() => webAppContextFake.IsContentPreviewMode).MustHaveHappened();
-                A.CallTo(() => salaryService.GetSalaryBySocAsync(A<string>.That.IsEqualTo(dummyJobProfile.SOCCode))).MustHaveHappened();
-                A.CallTo(() => salaryCalculator.GetStarterSalary(A<JobProfileSalary>._)).MustHaveHappened();
-                A.CallTo(() => salaryCalculator.GetExperiencedSalary(A<JobProfileSalary>._)).MustHaveHappened();
+                A.CallTo(() => searchQueryService.SearchAsync(A<string>.That.IsEqualTo(dummyJobProfile.Title), A<SearchProperties>._)).MustHaveHappened();
                 A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).MustNotHaveHappened();
                 A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._)).MustHaveHappened();
             }
@@ -283,9 +211,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests.Controllers
                 A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).MustHaveHappened();
                 A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._)).MustHaveHappened();
                 A.CallTo(() => webAppContextFake.IsContentPreviewMode).MustHaveHappened();
-                A.CallTo(() => salaryService.GetSalaryBySocAsync(A<string>.That.IsEqualTo(dummyJobProfile.SOCCode))).MustHaveHappened();
-                A.CallTo(() => salaryCalculator.GetStarterSalary(A<JobProfileSalary>._)).MustHaveHappened();
-                A.CallTo(() => salaryCalculator.GetExperiencedSalary(A<JobProfileSalary>._)).MustHaveHappened();
+                A.CallTo(() => searchQueryService.SearchAsync(A<string>.That.IsEqualTo(dummyJobProfile.Title), A<SearchProperties>._)).MustHaveHappened();
                 A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._)).MustHaveHappened();
                 A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).MustNotHaveHappened();
             }
