@@ -2,7 +2,6 @@
 using DFC.Digital.Core.Logging;
 using System;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace DFC.Digital.Core.Interceptors
@@ -11,7 +10,6 @@ namespace DFC.Digital.Core.Interceptors
     {
         public const string Name = "ExceptionPolicy";
 
-        private static readonly MethodInfo HandleAsyncMethodInfo = typeof(ExceptionInterceptor).GetMethod("HandleAsyncWithResult", BindingFlags.Instance | BindingFlags.NonPublic);
         private IApplicationLogger loggingService;
 
         public ExceptionInterceptor(IApplicationLogger logService)
@@ -21,39 +19,23 @@ namespace DFC.Digital.Core.Interceptors
 
         public void Intercept(IInvocation invocation)
         {
-            try
+            if (invocation == null)
             {
-                if (invocation == null)
-                {
-                    throw new ArgumentNullException(nameof(invocation));
-                }
-
-                var returnType = invocation.Method.ReturnType;
-                if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
-                {
-                    InterceptAsyncFunc(invocation);
-                }
-                else if (returnType == typeof(Task))
-                {
-                    invocation.ReturnValue = InterceptAsyncAction(invocation);
-                }
-                else
-                {
-                    InterceptSync(invocation);
-                }
-            }
-            catch (LoggedException)
-            {
-                // Ignore already logged exceptions.
-                // We would loose the stack trace to the callee is that an issue?
-                throw;
+                throw new ArgumentNullException(nameof(invocation));
             }
 
-            // other exception policies as we go along.
-            catch (Exception ex)
+            var returnType = invocation.Method.ReturnType;
+            if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
-                loggingService.Error($"Async Method '{invocation.Method.Name}' called from '{invocation.TargetType.FullName}' with parameters '{string.Join(", ", invocation.Arguments.Select(a => (a ?? string.Empty).ToString()).ToArray())}' failed with exception.", ex);
-                throw;
+                invocation.Proceed();
+            }
+            else if (returnType == typeof(Task))
+            {
+                invocation.ReturnValue = InterceptAsyncAction(invocation);
+            }
+            else
+            {
+                InterceptSync(invocation);
             }
         }
 
@@ -64,7 +46,7 @@ namespace DFC.Digital.Core.Interceptors
                 invocation.Proceed();
                 if (invocation.ReturnValue is Task task)
                 {
-                    await task.ConfigureAwait(false);
+                    await task;
                 }
             }
             catch (LoggedException)
@@ -82,19 +64,12 @@ namespace DFC.Digital.Core.Interceptors
             }
         }
 
-        private void InterceptAsyncFunc(IInvocation invocation)
-        {
-            invocation.Proceed();
-            var resultType = invocation.Method.ReturnType.GetGenericArguments()[0];
-            var mi = HandleAsyncMethodInfo.MakeGenericMethod(resultType);
-            invocation.ReturnValue = mi.Invoke(this, new[] { invocation });
-        }
-
-        private async Task<T> HandleAsyncWithResult<T>(IInvocation invocation)
+        private async Task<TResult> InterceptAsyncFunc<TResult>(IInvocation invocation)
         {
             try
             {
-                return await ((Task<T>)invocation.ReturnValue).ConfigureAwait(false);
+                invocation.Proceed();
+                return await (Task<TResult>)invocation.ReturnValue;
             }
             catch (LoggedException)
             {
@@ -102,9 +77,10 @@ namespace DFC.Digital.Core.Interceptors
                 // We would loose the stack trace to the callee is that an issue?
                 throw;
             }
+
+            // other exception policies as we go along.
             catch (Exception ex)
             {
-                // other exception policies as we go along.
                 loggingService.Error($"Async Method '{invocation.Method.Name}' called from '{invocation.TargetType.FullName}' with parameters '{string.Join(", ", invocation.Arguments.Select(a => (a ?? string.Empty).ToString()).ToArray())}' failed with exception.", ex);
                 throw;
             }
