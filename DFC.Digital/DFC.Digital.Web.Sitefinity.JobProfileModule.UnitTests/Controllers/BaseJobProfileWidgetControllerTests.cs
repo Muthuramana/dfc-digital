@@ -1,4 +1,5 @@
-﻿using DFC.Digital.Core;
+﻿using AutoMapper;
+using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
 using DFC.Digital.Data.Model;
 using DFC.Digital.Web.Sitefinity.Core;
@@ -6,7 +7,9 @@ using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using FakeItEasy;
 using FluentAssertions;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using TestStack.FluentMVCTesting;
 using Xunit;
 
@@ -14,6 +17,221 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
 {
     public class BaseJobProfileWidgetControllerTests
     {
+        [Theory]
+        [InlineData("Plumber", "plumber")]
+        [InlineData("Colon Hydrotherapist", "colon hydrotherapist")]
+        public void DynamicSectionTitleWithLowercaseTest(string title, string expected)
+        {
+            //Setup the fakes and dummies
+            var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
+            var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
+            var sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
+            var dummyJobProfile = GetDummyJobPRofile(true);
+            dummyJobProfile.Title = title;
+
+            // Set up calls
+            A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._)).ReturnsLazily((string defaultProfile) => defaultProfile);
+            A.CallTo(() => webAppContextFake.IsContentAuthoringSite).Returns(true);
+            A.CallTo(() => webAppContextFake.IsContentPreviewMode).Returns(true);
+
+            //Instantiate & Act
+            using (var jobProfileChangeTitleCaseController = new TestBaseJobProfileWidgetController(webAppContextFake, repositoryFake, loggerFake, sitefinityPage))
+            {
+                //Act
+                var result = jobProfileChangeTitleCaseController.ChangeWordCase(title);
+
+                //Assert
+                Assert.Equal(result, expected, ignoreCase: false);
+            }
+        }
+
+        [Theory]
+        [InlineData("Ofsted inspector", "Ofsted inspector")]
+        [InlineData("UX Designer", "UX designer")]
+        [InlineData("AandE Staff", "aande staff")]
+        [InlineData("A&E Staff", "A&E staff")]
+        [InlineData("Hospital (A&E) Staff", "hospital (A&E) staff")]
+        [InlineData("English as a foreign language (EFL) teacher", "english as a foreign language (EFL) teacher")]
+        public void DynamicSectionTitleWithAcronym(string title, string expected)
+        {
+            //Setup the fakes and dummies
+            var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
+            var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
+            var sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
+            var dummyJobProfile = GetDummyJobPRofile(true);
+            dummyJobProfile.Title = title;
+
+            // Set up calls
+            A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._)).ReturnsLazily((string defaultProfile) => defaultProfile);
+            A.CallTo(() => webAppContextFake.IsContentAuthoringSite).Returns(true);
+            A.CallTo(() => webAppContextFake.IsContentPreviewMode).Returns(true);
+
+            //Instantiate & Act
+            using (var jobProfileCheckForAcronymController = new TestBaseJobProfileWidgetController(webAppContextFake, repositoryFake, loggerFake, sitefinityPage))
+            {
+                //Act
+                var result = jobProfileCheckForAcronymController.CheckForAcronym(title);
+
+                //Assert
+                Assert.Equal(result, expected, ignoreCase: false);
+            }
+        }
+
+        [Theory]
+        [InlineData("Ofsted inspector", true)]
+        [InlineData("Merchant Navy officer", false)]
+        [InlineData("Royal Navy officer", true)]
+        [InlineData("Interpreter", false)]
+        [InlineData("Post Office customer service assistant", true)]
+
+        public void DynamicSectionTitleCheckForSpecialConditionTest(string title, bool expected)
+        {
+            //Setup the fakes and dummies
+            var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
+            var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
+            var sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
+            var dummyJobProfile = GetDummyJobPRofile(true);
+            dummyJobProfile.Title = title;
+
+            // Set up calls
+            A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._)).ReturnsLazily((string defaultProfile) => defaultProfile);
+            A.CallTo(() => webAppContextFake.IsContentAuthoringSite).Returns(true);
+            A.CallTo(() => webAppContextFake.IsContentPreviewMode).Returns(true);
+
+            //Instantiate & Act
+            using (var jobProfileCheckForAcronymController = new TestBaseJobProfileWidgetController(webAppContextFake, repositoryFake, loggerFake, sitefinityPage))
+            {
+                //Act
+                var result = jobProfileCheckForAcronymController.IsSpecialConditionWords(title);
+
+                //Assert
+                result.Should().Be(expected);
+            }
+        }
+
+        [Theory]
+        [InlineData("No Prefix", "test", "test")]
+        [InlineData("Prefix with a", "test", "a test")]
+        [InlineData("Prefix with an", "test", "an test")]
+        [InlineData("test", "test", "a test")]
+        [InlineData("test", "etest", "an etest")]
+        [InlineData("No Title", "test", "")]
+        public void GetDynamicTitleTest(string dynamicTitlePrefix, string title, string expected)
+        {
+            //Setup the fakes and dummies
+            var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
+            var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
+            var sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
+            var dummyJobProfile = GetDummyJobPRofile(true);
+            dummyJobProfile.DynamicTitlePrefix = dynamicTitlePrefix;
+            dummyJobProfile.Title = title;
+
+            // Set up calls
+            //A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._)).ReturnsLazily((string defaultProfile) => defaultProfile);
+            A.CallTo(() => webAppContextFake.IsContentAuthoringSite).Returns(true);
+            A.CallTo(() => webAppContextFake.IsContentPreviewMode).Returns(true);
+
+            //Instantiate & Act
+            using (var jobProfileHowToBecomeController = new TestBaseJobProfileWidgetController(webAppContextFake, repositoryFake, loggerFake, sitefinityPage))
+            {
+                //Act
+                var result = jobProfileHowToBecomeController.GetDynamicTitle(false);
+
+                //Assert
+                result.Should().BeEquivalentTo(expected);
+            }
+        }
+
+        [Theory]
+        [InlineData("No Title", "test", "a test")]
+        [InlineData("No Title", "etest", "an etest")]
+        public void DynamicSectionTitleForCoursesAndApprenticeshipsTest(string htbPrefix, string title, string expected)
+        {
+            //Setup the fakes and dummies
+            var repositoryFake = A.Fake<IJobProfileRepository>(ops => ops.Strict());
+            var socCodeRepositoryFake = A.Fake<IJobProfileSocCodeRepository>(ops => ops.Strict());
+            var coursesearchFake = A.Fake<ICourseSearchService>(ops => ops.Strict());
+            var loggerFake = A.Fake<IApplicationLogger>();
+            var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
+            var sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
+            var dummyJobProfile = GetDummyJobPRofile(true);
+            dummyJobProfile.DynamicTitlePrefix = htbPrefix;
+            dummyJobProfile.Title = title;
+
+            var dummyCourses = new EnumerableQuery<Course>(new List<Course>
+            {
+                new Course
+                {
+                    Title = $"dummy {nameof(Course.Title)}",
+                    Location = $"dummy {nameof(Course.Location)}",
+                    CourseId = $"dummy {nameof(Course.CourseId)}",
+                    StartDate = default(DateTime),
+                    ProviderName = $"dummy {nameof(Course.ProviderName)}"
+                },
+                new Course
+                {
+                    Title = $"dummy {nameof(Course.Title)}",
+                    Location = $"dummy {nameof(Course.Location)}",
+                    CourseId = $"dummy {nameof(Course.CourseId)}",
+                    StartDate = default(DateTime),
+                    ProviderName = $"dummy {nameof(Course.ProviderName)}"
+                }
+            });
+
+            var dummyApprenticeships = new EnumerableQuery<ApprenticeVacancy>(new List<ApprenticeVacancy>
+            {
+                new ApprenticeVacancy
+                {
+                    Title = $"dummy {nameof(ApprenticeVacancy.Title)}",
+                    Location = $"dummy {nameof(ApprenticeVacancy.Location)}",
+                    URL = new Uri($"/dummy{nameof(ApprenticeVacancy.URL)}", UriKind.RelativeOrAbsolute),
+                    VacancyId = $"dummy {nameof(ApprenticeVacancy.VacancyId)}",
+                    WageAmount = "£3",
+                    WageUnitType = $"dummy {nameof(ApprenticeVacancy.WageUnitType)}"
+                },
+                new ApprenticeVacancy
+                {
+                    Title = $"dummy {nameof(ApprenticeVacancy.Title)}",
+                    Location = $"dummy {nameof(ApprenticeVacancy.Location)}",
+                    URL = new Uri($"/dummy{nameof(ApprenticeVacancy.URL)}", UriKind.RelativeOrAbsolute),
+                    VacancyId = $"dummy {nameof(ApprenticeVacancy.VacancyId)}",
+                    WageAmount = "£3",
+                    WageUnitType = $"dummy {nameof(ApprenticeVacancy.WageUnitType)}"
+                }
+            });
+
+            // Set up calls
+            A.CallTo(() => repositoryFake.GetByUrlName(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => repositoryFake.GetByUrlNameForPreview(A<string>._)).Returns(dummyJobProfile);
+            A.CallTo(() => socCodeRepositoryFake.GetApprenticeVacanciesBySocCode(A<string>._)).Returns(dummyApprenticeships);
+            A.CallTo(() => coursesearchFake.GetCoursesAsync(A<string>._)).Returns(dummyCourses);
+            A.CallTo(() => sitefinityPage.GetDefaultJobProfileToUse(A<string>._)).ReturnsLazily((string defaultProfile) => defaultProfile);
+            A.CallTo(() => webAppContextFake.IsContentAuthoringSite).Returns(true);
+            A.CallTo(() => webAppContextFake.IsContentPreviewMode).Returns(true);
+
+            //Instantiate & Act
+            using (var jobProfileApprenticeshipsAndCoursesController = new TestBaseJobProfileWidgetController(webAppContextFake, repositoryFake, loggerFake, sitefinityPage))
+            {
+                //Act
+                var result = jobProfileApprenticeshipsAndCoursesController.GetDynamicTitle(true);
+
+                //Assert
+                result.Should().BeEquivalentTo(expected);
+            }
+        }
+
         [Theory]
         [InlineData(true, true)]
         [InlineData(false, true)]
@@ -128,7 +346,8 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
                        WorkingHoursPatternsAndEnvironment = nameof(JobProfile.WorkingHoursPatternsAndEnvironment),
                        HowToBecomeData = new HowToBecome(),
                        Restrictions = new List<Restriction> { new Restriction { Info = nameof(Restriction.Info), Title = nameof(Restriction.Title) } },
-                       OtherRequirements = nameof(JobProfile.OtherRequirements)
+                       OtherRequirements = nameof(JobProfile.OtherRequirements),
+                       DynamicTitlePrefix = nameof(JobProfile.DynamicTitlePrefix)
                    }
                    : null;
         }

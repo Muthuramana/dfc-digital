@@ -86,9 +86,11 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
             var jobProfileApprenticeshipsController = new JobProfileApprenticeshipsController(repositoryFake, webAppContextFake, socRepositoryFake, loggerFake, sitefinityPage)
             {
                 ApprenticeshipText = nameof(JobProfileApprenticeshipsController.ApprenticeshipText),
+                NoVacancyText = nameof(JobProfileApprenticeshipsController.NoVacancyText),
                 ApprenticeshipLocationDetails =
                     nameof(JobProfileApprenticeshipsController.ApprenticeshipLocationDetails),
                 ApprenticeshipSectionTitle = nameof(JobProfileApprenticeshipsController.ApprenticeshipSectionTitle),
+                ApprenticeshipWageTitle = nameof(JobProfileApprenticeshipsController.ApprenticeshipWageTitle),
                 MainSectionTitle = nameof(JobProfileApprenticeshipsController.MainSectionTitle),
                 MaxApprenticeshipCount = maxApp
             };
@@ -107,6 +109,10 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
                             .MainSectionTitle);
                         vm.ApprenticeshipText.Should().BeEquivalentTo(jobProfileApprenticeshipsController
                             .ApprenticeshipText);
+                        vm.NoVacancyText.Should().BeEquivalentTo(jobProfileApprenticeshipsController
+                           .NoVacancyText);
+                        vm.WageTitle.Should().Be(jobProfileApprenticeshipsController
+                           .ApprenticeshipWageTitle);
                         vm.LocationDetails.Should().Be(jobProfileApprenticeshipsController
                             .ApprenticeshipLocationDetails);
                         vm.NoVacancyText.Should().Be(jobProfileApprenticeshipsController.NoVacancyText);
@@ -163,6 +169,19 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
             var webAppContextFake = A.Fake<IWebAppContext>(ops => ops.Strict());
             var sitefinityPage = A.Fake<ISitefinityPage>(ops => ops.Strict());
 
+            var dummyJobProfileApprenticeshipViewModel = !useValidJobProfile
+                ? new JobProfileApprenticeshipViewModel
+                {
+                    ApprenticeVacancies = new List<ApprenticeVacancy>(),
+                    ApprenticeshipSectionTitle = $"dummy {nameof(JobProfileApprenticeshipViewModel.ApprenticeshipSectionTitle)}",
+                    WageTitle = $"dummy {nameof(JobProfileApprenticeshipViewModel.WageTitle)}",
+                    LocationDetails = $"dummy {nameof(JobProfileApprenticeshipViewModel.LocationDetails)}",
+                    ApprenticeshipText = $"dummy {nameof(JobProfileApprenticeshipViewModel.ApprenticeshipText)}",
+                    MainSectionTitle = $"dummy {nameof(JobProfileApprenticeshipViewModel.MainSectionTitle)}",
+                    NoVacancyText = $"dummy {nameof(JobProfileApprenticeshipViewModel.NoVacancyText)}"
+                }
+                : null;
+
             var dummyJobProfile = useValidJobProfile
                 ? new JobProfile
                 {
@@ -211,8 +230,10 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
             var jobProfileApprenticeshipsController = new JobProfileApprenticeshipsController(repositoryFake, webAppContextFake, socRepositoryFake, loggerFake, sitefinityPage)
             {
                 ApprenticeshipText = nameof(JobProfileApprenticeshipsController.ApprenticeshipText),
+                NoVacancyText = nameof(JobProfileApprenticeshipsController.NoVacancyText),
                 ApprenticeshipLocationDetails = nameof(JobProfileApprenticeshipsController.ApprenticeshipLocationDetails),
                 ApprenticeshipSectionTitle = nameof(JobProfileApprenticeshipsController.ApprenticeshipSectionTitle),
+                ApprenticeshipWageTitle = nameof(JobProfileApprenticeshipsController.ApprenticeshipWageTitle),
                 MainSectionTitle = nameof(JobProfileApprenticeshipsController.MainSectionTitle),
                 DefaultJobProfileUrlName = nameof(JobProfileApprenticeshipsController.DefaultJobProfileUrlName),
                 MaxApprenticeshipCount = 2
@@ -220,8 +241,23 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
 
             //Act
             var indexWithUrlNameMethodCall = jobProfileApprenticeshipsController.WithCallTo(c => c.Index(urlName));
-
-            if (useValidJobProfile)
+            if (inContentAuthoringSite && useValidJobProfile)
+            {
+                indexWithUrlNameMethodCall
+                 .ShouldRenderDefaultView()
+                 .WithModel<JobProfileApprenticeshipViewModel>(vm =>
+                 {
+                     vm.ApprenticeVacancies.Should().BeEquivalentTo(dummyApprenticeships);
+                     vm.ApprenticeshipSectionTitle.Should().BeEquivalentTo(dummyJobProfileApprenticeshipViewModel.ApprenticeshipSectionTitle);
+                     vm.WageTitle.Should().Be(jobProfileApprenticeshipsController.ApprenticeshipWageTitle);
+                     vm.LocationDetails.Should().BeEquivalentTo(dummyJobProfileApprenticeshipViewModel.LocationDetails);
+                     vm.MainSectionTitle.Should().BeEquivalentTo(dummyJobProfileApprenticeshipViewModel.MainSectionTitle);
+                     vm.ApprenticeshipText.Should().BeEquivalentTo(dummyJobProfileApprenticeshipViewModel.ApprenticeshipText);
+                     vm.NoVacancyText.Should().BeEquivalentTo(dummyJobProfileApprenticeshipViewModel.NoVacancyText);
+                 })
+                 .AndNoModelErrors();
+            }
+            else if (useValidJobProfile)
             {
                 //Assert
                 indexWithUrlNameMethodCall
@@ -232,6 +268,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.UnitTests
                             .MainSectionTitle);
                         vm.ApprenticeshipText.Should().BeEquivalentTo(jobProfileApprenticeshipsController
                             .ApprenticeshipText);
+                        vm.WageTitle.Should().Be(jobProfileApprenticeshipsController.ApprenticeshipWageTitle);
                         vm.LocationDetails.Should().Be(jobProfileApprenticeshipsController
                             .ApprenticeshipLocationDetails);
                         vm.NoVacancyText.Should().Be(jobProfileApprenticeshipsController.NoVacancyText);

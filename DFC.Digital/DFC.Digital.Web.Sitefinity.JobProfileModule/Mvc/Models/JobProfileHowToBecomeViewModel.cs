@@ -1,8 +1,4 @@
 ﻿using DFC.Digital.Data.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 
 namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models
 {
@@ -22,6 +18,8 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models
         public string MainSectionTitle { get; set; }
 
         public string SubsectionUniversity { get; set; }
+
+        public string DynamicTitlePrefix { get; set; }
 
         public string SubsectionUniversityRequirements { get; set; }
 

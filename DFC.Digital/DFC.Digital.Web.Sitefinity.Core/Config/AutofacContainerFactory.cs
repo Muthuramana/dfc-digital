@@ -14,7 +14,7 @@ namespace DFC.Digital.Web.Sitefinity.Core
         {
             if (controllerType == null)
             {
-                 return base.GetControllerInstance(requestContext, controllerType);
+                return base.GetControllerInstance(requestContext, controllerType);
             }
 
             var autofacLifetimeScope = AutofacDependencyResolver.Current.RequestLifetimeScope;

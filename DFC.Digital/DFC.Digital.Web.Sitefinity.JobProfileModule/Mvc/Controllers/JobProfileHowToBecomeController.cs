@@ -1,15 +1,8 @@
 ﻿using AutoMapper;
 using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
-using DFC.Digital.Data.Model;
 using DFC.Digital.Web.Sitefinity.Core;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Web;
 using System.Web.Mvc;
 using Telerik.Sitefinity.Mvc;
 
@@ -44,6 +37,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         #endregion Constructors
 
         #region Public Properties
+
         public string MainSectionTitle { get; set; } = "How to become";
 
         public string SectionId { get; set; } = "HowToBecome";
@@ -125,7 +119,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
 
         private ActionResult GetJobProfileDetailsView()
         {
-           var model = LoadViewModel();
+            var model = LoadViewModel();
 
             return View("Index", model);
         }
@@ -138,6 +132,11 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
             {
                 model.HowToBecomeText = CurrentJobProfile.HowToBecome;
                 model.HowToBecome = CurrentJobProfile.HowToBecomeData;
+                model.MainSectionTitle = $"{MainSectionTitle} {GetDynamicTitle(false)}".Trim();
+            }
+            else
+            {
+                model.MainSectionTitle = $"{MainSectionTitle}".Trim();
             }
 
             return model;

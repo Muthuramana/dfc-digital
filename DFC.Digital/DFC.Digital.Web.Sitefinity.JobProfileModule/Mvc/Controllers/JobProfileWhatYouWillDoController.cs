@@ -1,6 +1,5 @@
 ﻿using DFC.Digital.Core;
 using DFC.Digital.Data.Interfaces;
-using DFC.Digital.Data.Model;
 using DFC.Digital.Web.Sitefinity.Core;
 using DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Models;
 using System.Web.Mvc;
@@ -133,7 +132,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
         /// </value>
         public bool IsWYDIntroActive { get; set; }
 
-        #endregion private Properties
+        #endregion public Properties
 
         #region Actions
 
@@ -179,7 +178,7 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule.Mvc.Controllers
             var model = new JobProfileWhatYouWillDoViewModel();
             if (CurrentJobProfile != null)
             {
-                 model = new JobProfileWhatYouWillDoViewModel
+                model = new JobProfileWhatYouWillDoViewModel
                 {
                     TopSectionContent = TopSectionContent,
                     BottomSectionContent = BottomSectionContent,

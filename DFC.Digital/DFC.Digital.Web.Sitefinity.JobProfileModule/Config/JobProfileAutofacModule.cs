@@ -1,7 +1,6 @@
 ﻿using Autofac;
-using Autofac.Extras.DynamicProxy2;
+using Autofac.Extras.DynamicProxy;
 using Autofac.Integration.Mvc;
-using AutoMapper;
 using DFC.Digital.Core.Interceptors;
 using DFC.Digital.Data.Interfaces;
 
@@ -22,13 +21,6 @@ namespace DFC.Digital.Web.Sitefinity.JobProfileModule
                 .InstancePerLifetimeScope()
                 .EnableInterfaceInterceptors()
                 .InterceptedBy(InstrumentationInterceptor.Name, ExceptionInterceptor.Name);
-
-            builder.Register(ctx => new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<JobProfilesAutoMapperProfile>();
-            })).InstancePerLifetimeScope();
-
-            builder.Register(ctx => ctx.Resolve<MapperConfiguration>().CreateMapper()).As<IMapper>().InstancePerLifetimeScope();
 
             // Note that ASP.NET MVC requests controllers by their concrete types,
             // so registering them As<IController>() is incorrect.

@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using Autofac.Extras.DynamicProxy2;
+using Autofac.Extras.DynamicProxy;
 using DFC.Digital.Core;
 using DFC.Digital.Core.Interceptors;
 using DFC.Digital.Data.Interfaces;
@@ -51,17 +51,13 @@ namespace DFC.Digital.Service.AzureSearch
         private ISearchServiceClient CreateSearchServiceClient(IComponentContext arg)
         {
             string searchServiceName = ConfigurationManager.AppSettings[Constants.KeysSearchServiceName];
-            string adminApiKey = ConfigurationManager.AppSettings[Constants.KeysSearchServiceAdminApiKey];
-
-            return new SearchServiceClient(searchServiceName, new SearchCredentials(adminApiKey));
+            return new SearchServiceClient(searchServiceName, new SearchCredentials(arg.Resolve<ISearchIndexConfig>().AccessKey));
         }
 
         private ISearchIndexClient CreateSearchIndexClient(IComponentContext arg)
         {
             string searchServiceName = ConfigurationManager.AppSettings[Constants.KeysSearchServiceName];
-            string queryApiKey = ConfigurationManager.AppSettings[Constants.KeysSearchServiceAdminApiKey];
-
-            return new SearchIndexClient(searchServiceName, arg.Resolve<ISearchIndexConfig>().Name, new SearchCredentials(queryApiKey));
+            return new SearchIndexClient(searchServiceName, arg.Resolve<ISearchIndexConfig>().Name, new SearchCredentials(arg.Resolve<ISearchIndexConfig>().AccessKey));
         }
     }
 }
