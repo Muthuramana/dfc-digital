@@ -17,6 +17,7 @@ steps:
 - task: NuGetCommand@2
   inputs:
     restoreSolution: '$(solution)'
+    nugetConfigPath: '/DFC.Digital/.nuget/NuGet.Config'
 
 - task: VSBuild@1
   inputs:
