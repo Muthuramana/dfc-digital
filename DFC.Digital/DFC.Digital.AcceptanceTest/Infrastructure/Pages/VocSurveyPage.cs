@@ -3,7 +3,7 @@ using TestStack.Seleno.PageObjects;
 
 namespace DFC.Digital.AcceptanceTest.Infrastructure
 {
-    public class VocSurveyPage : Page
+    public class VocSurveyPage : DFCPage
     {
         public bool IsSurveyDisplayed()
         {
@@ -24,6 +24,6 @@ namespace DFC.Digital.AcceptanceTest.Infrastructure
             close.Click();
         }
 
-        public bool IsJPSurveyQuestionDisplayed() => Find.Element(By.Id("ss-question-title-7271726")) != null;
+        public bool IsJPSurveyQuestionDisplayed() => Find.Element(By.ClassName("ss-question-title")) != null;
     }
 }

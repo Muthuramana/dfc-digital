@@ -52,17 +52,24 @@ that is bundled with the nuget package under the tools folder.
     <add key="DFC.Digital.GovUkNotifyAPIKey" value="__govUkNotifyKey__" />
     <add key="DFC.Digital.GovUkNotifyTemplateId" value="__govUkNotifyEmailTemplateId__" />
     <add key="DFC.Digital.AsheFeedAccessKey" value="__lmiForAllApiAccessKey__" />
-    <add key="DFC.Digital.AsheEstimateMdApiGateway" value="http://api.lmiforall.org.uk/api/v1/ashe/estimatePayMD?soc={0}&amp;accessKey={1}" />
-
+    <add key="DFC.Digital.AsheEstimateMdApiGateway" value="http://api.lmiforall.org.uk/api/v1/ashe/estimatePayMD?soc={0}&amp;accessKey={1}" />   
+    <add key="DFC.Digital.CDNLocation" value="__cdnUrl__" />
+    <!--Send Grid Settings-->
+    <add key="DFC.Digital.SendGridApiKey" value="__sendGridApiKey__" />
+    <add key="DFC.Digital.SendGridDefaultNumberOfRetries" value="2" />
+    <add key="DFC.Digital.SendGridDefaultMinimumBackOff" value="2" />
+    <add key="DFC.Digital.SendGridDeltaBackOff" value="3" />
+    <add key="DFC.Digital.SendGridDefaultMaximumBackOff" value="3" />
     <!-- Course Search -->
     <add key="DFC.Digital.CourseSearchApiKey" value="__courseSearchApiKey__" />
     <add key="DFC.Digital.CourseSearchPageSize" value="20" />
     <add key="DFC.Digital.CourseSearchAttendanceModes" value="AM1,AM2,AM3,AM4,AM5,AM6,AM7,AM8,AM9" />
-    <add key="DFC.Digital.CourseSearchAudit.EndpointUrl" value="__cosmosDbEndpointUrl__" />
-    <add key="DFC.Digital.CourseSearchAudit.PrimaryKey" value="__cosmosDbPrimaryKey__" />
-    <add key="DFC.Digital.CourseSearchAudit.Db" value="CourseSearch" />
-    <add key="DFC.Digital.CourseSearchAudit.Collection" value="AuditRecords" />
-
+    <!-- Consmos settings -->
+    <add key="DFC.Digital.CosmosDb.Name" value="dfc-digital-audit" />
+    <add key="DFC.Digital.CourseSearchAudit.Collection" value="CourseSearchAudit" />
+    <add key="DFC.Digital.EmailAudit.Collection" value="ContactUsResponses" />
+    <add key="DFC.Digital.CosmosAudit.EndpointUrl" value="__cosmosDbEndpointUrl__" />
+    <add key="DFC.Digital.CosmosAudit.PrimaryKey" value="__cosmosDbPrimaryKey__" />
     <!-- Bing  Cognitive API-->
     <add key="DFC.Cognitive.BingSpellCheck.ApiKey" value="__bingSpellCheckApiKey__" />
     <add key="DFC.Cognitive.BingSpellCheck.RequestEndPoint" value="https://api.cognitive.microsoft.com/bing/v7.0/spellcheck/?text={0}&amp;mode=spell&amp;mkt=en-gb" />
@@ -264,9 +271,11 @@ that is bundled with the nuget package under the tools folder.
     <httpModules>
       <remove name="FormsAuthentication" />
       <remove name="RoleManager" />
-      <remove name="OutputCache" />
+      <!--Since 11.1 distrubuted cache has been introduced. Reverting back to ASP.NET cache to fix intermittent cache issue. Various distributed cache provider should be evaluated on a new story.-->
+      <!--<remove name="OutputCache" />-->
       <add name="Sitefinity" type="DFC.Digital.Web.Sitefinity.Core.AppStatusSitefinityHttpModule, DFC.Digital.Web.Sitefinity.Core" />
-      <add name="OutputCache" type="Telerik.Sitefinity.Web.OutputCache.SitefinityOutputCacheModule, Telerik.Sitefinity" preCondition="integratedMode" />
+      <!--Since 11.1 distrubuted cache has been introduced. Reverting back to ASP.NET cache to fix intermittent cache issue. Various distributed cache provider should be evaluated on a new story.-->
+      <!--<add name="OutputCache" type="Telerik.Sitefinity.Web.OutputCache.SitefinityOutputCacheModule, Telerik.Sitefinity" preCondition="integratedMode" />-->
       <add name="ScriptModule" type="System.Web.Handlers.ScriptModule, System.Web.Extensions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" />
       <add name="RadUploadModule" type="Telerik.Web.UI.RadUploadHttpModule, Telerik.Web.UI" />
       <add name="SitefinityAnalyticsModule" type="Telerik.Sitefinity.Analytics.Server.DependencyResolution.Module.DependencyRegistrarHttpModule, Telerik.Sitefinity.Analytics.Server.Infrastructure" />
@@ -280,7 +289,7 @@ that is bundled with the nuget package under the tools folder.
         <binding name="basicHttpBinding" maxReceivedMessageSize="2147483647" maxBufferSize="2147483647">
           <security mode="None" />
         </binding>
-        <binding name="CourseSearchSoap" closeTimeout="00:05:00" openTimeout="00:00:03" receiveTimeout="00:00:03" sendTimeout="00:00:03" allowCookies="false" bypassProxyOnLocal="false" hostNameComparisonMode="WeakWildcard" maxBufferSize="6553600" maxBufferPoolSize="524288" maxReceivedMessageSize="6553600" messageEncoding="Text" textEncoding="utf-8" transferMode="Buffered" useDefaultWebProxy="true">
+        <binding name="CourseSearchSoap" closeTimeout="00:05:00" openTimeout="00:00:08" receiveTimeout="00:00:08" sendTimeout="00:00:08" allowCookies="false" bypassProxyOnLocal="false" hostNameComparisonMode="WeakWildcard" maxBufferSize="6553600" maxBufferPoolSize="524288" maxReceivedMessageSize="6553600" messageEncoding="Text" textEncoding="utf-8" transferMode="Buffered" useDefaultWebProxy="true">
           <security mode="Transport" />
         </binding>
         <!-- note: To enable https/SSL support for the Analytics module, uncomment this binding -->
@@ -338,9 +347,11 @@ that is bundled with the nuget package under the tools folder.
       <remove name="SitefinityAnalyticsModule" />
       <remove name="FormsAuthentication" />
       <remove name="RoleManager" />
-      <remove name="OutputCache" />
+      <!--Since 11.1 distributed cache has been introduced. Reverting back to ASP.NET cache to fix intermittent cache issue. Various distributed cache provider should be evaluated on a new story.-->
+      <!--<remove name="OutputCache" />-->
       <add name="Sitefinity" type="DFC.Digital.Web.Sitefinity.Core.AppStatusSitefinityHttpModule, DFC.Digital.Web.Sitefinity.Core" />
-      <add name="OutputCache" type="Telerik.Sitefinity.Web.OutputCache.SitefinityOutputCacheModule, Telerik.Sitefinity" preCondition="integratedMode" />
+      <!--Since 11.1 distributed cache has been introduced. Reverting back to ASP.NET cache to fix intermittent cache issue. Various distributed cache provider should be evaluated on a new story.-->
+      <!--<add name="OutputCache" type="Telerik.Sitefinity.Web.OutputCache.SitefinityOutputCacheModule, Telerik.Sitefinity" preCondition="integratedMode" />-->
       <add name="ScriptModule" preCondition="managedHandler" type="System.Web.Handlers.ScriptModule, System.Web.Extensions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" />
       <add name="RadUploadModule" type="Telerik.Web.UI.RadUploadHttpModule, Telerik.Web.UI" />
       <add name="SitefinityAnalyticsModule" type="Telerik.Sitefinity.Analytics.Server.DependencyResolution.Module.DependencyRegistrarHttpModule, Telerik.Sitefinity.Analytics.Server.Infrastructure" />

@@ -13,6 +13,26 @@
     <parameterEntry kind="XmlFile" scope="\\AuthenticationConfig\.config$"
                     match="/authenticationConfig/securityTokenServiceSettings/identityServerSettings/identityServerClients/add[@clientName='dfcintegration']/clientSecrets/add/@clientSecret" />
   </parameter>
+
+  <parameter name="DYSAC_Sitefinity_Client_Id"
+             description="Tokenize the sitefinity client Id to be replaced by VSTS task"
+             defaultValue="__dysac_clientId__">
+    <parameterEntry kind="XmlFile" scope="\\AuthenticationConfig\.config$"
+                    match="/authenticationConfig/securityTokenServiceSettings/identityServerSettings/identityServerClients/add[@clientName='dsac']/@clientId" />
+  </parameter>
+  <parameter name="DYSAC_Sitefinity_Auth_ClientSecret"
+         description="Tokenize the job profile search name to be replaced by VSTS task"
+         defaultValue="__dysac_clientSecret__">
+    <parameterEntry kind="XmlFile" scope="\\AuthenticationConfig\.config$"
+                    match="/authenticationConfig/securityTokenServiceSettings/identityServerSettings/identityServerClients/add[@clientName='dsac']/clientSecrets/add/@clientSecret" />
+  </parameter>
+  <parameter name="DYSAC_Sitefinity_Auth_CorsOrigin"
+         description="Tokenize the job profile search name to be replaced by VSTS task"
+         defaultValue="__dysac_corsOrigin__">
+    <parameterEntry kind="XmlFile" scope="\\AuthenticationConfig\.config$"
+                    match="/authenticationConfig/securityTokenServiceSettings/identityServerSettings/identityServerClients/add[@clientName='dsac']/allowedCorsOrigins/add/@allowedCorsOrigin" />
+  </parameter>
+  
   <parameter name="Sitefinity_EncryptionKey"
              description="Tokenize the sitefinity encryptionKey to be replaced by VSTS task"
              defaultValue="__sitefinityAuthenticationEncKey__">
@@ -143,13 +163,13 @@
              description="Tokenize the cosmos endpoint url to be replaced by VSTS task"
              defaultValue="__cosmosDbEndpointUrl__">
     <parameterEntry kind="XmlFile" scope="\\web\.config$"
-                    match="/configuration/appSettings/add[@key='DFC.Digital.CourseSearchAudit.EndpointUrl']/@value" />
+                    match="/configuration/appSettings/add[@key='DFC.Digital.CosmosAudit.EndpointUrl']/@value" />
   </parameter>
   <parameter name="CosmosDb_PrimaryKey"
              description="Tokenize the cosmos primary key to be replaced by VSTS task"
              defaultValue="__cosmosDbPrimaryKey__">
     <parameterEntry kind="XmlFile" scope="\\web\.config$"
-                    match="/configuration/appSettings/add[@key='DFC.Digital.CourseSearchAudit.PrimaryKey']/@value" />
+                    match="/configuration/appSettings/add[@key='DFC.Digital.CosmosAudit.PrimaryKey']/@value" />
   </parameter>
   <parameter name="CouseSearch_WcfEnpoint"
              description="Tokenize the course search wcf endpoint to be replaced by VSTS task"
@@ -176,5 +196,18 @@
              defaultValue="__onetSkillsFrameworkConnectionString__">
     <parameterEntry kind="XmlFile" scope="\\web\.config$"
                     match="/configuration/connectionStrings/add[@name='DFC.Digital.OnetSkillsFramework']/@connectionString" />
+  </parameter>
+  <parameter name="SendGrid_ApiKey"
+             description="Tokenize the send grid Api key to be replaced by VSTS task"
+             defaultValue="__sendGridApiKey__">
+    <parameterEntry kind="XmlFile" scope="\\web\.config$"
+                    match="/configuration/appSettings/add[@key='DFC.Digital.SendGridApiKey']/@value" />
+  </parameter>
+  <parameter name="cdn_url"
+             description="Tokenize the send grid Api key to be replaced by VSTS task"
+             defaultValue="__cdnUrl__">
+    <parameterValidation kind="AllowEmpty" />
+    <parameterEntry kind="XmlFile" scope="\\web\.config$"
+                    match="/configuration/appSettings/add[@key='DFC.Digital.CDNLocation']/@value" />
   </parameter>
 </parameters>

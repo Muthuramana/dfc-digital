@@ -196,7 +196,9 @@
     <Compile Include="Infrastructure\Pages\BauProfilePage.cs" />
     <Compile Include="Infrastructure\Pages\BauSearchPage.cs" />
     <Compile Include="Infrastructure\Pages\CourseDirectoryPage.cs" />
-    <Compile Include="Infrastructure\Pages\DFCElementFinder.cs" />
+    <Compile Include="Infrastructure\Config\DFCElementFinder.cs" />
+    <Compile Include="Infrastructure\Config\DFCPage.cs" />
+    <Compile Include="Infrastructure\Config\DFCPageWithViewModel.cs" />
     <Compile Include="Infrastructure\Pages\HealthStatusPage.cs" />
     <Compile Include="Infrastructure\Pages\HelpPage.cs" />
     <Compile Include="Infrastructure\Pages\InformationSourcesPage.cs" />
@@ -205,7 +207,6 @@
     <Compile Include="Infrastructure\Pages\PrivacyPage.cs" />
     <Compile Include="Infrastructure\Pages\SearchPage.cs" />
     <Compile Include="Infrastructure\Pages\HomePage.cs" />
-    <Compile Include="Infrastructure\Pages\SitefinityPage.cs" />
     <Compile Include="Infrastructure\Pages\TermsAndConditionPage.cs" />
     <Compile Include="Infrastructure\Pages\VocSurveyPage.cs" />
     <Compile Include="Infrastructure\Utilities\HelperExtensions.cs" />
@@ -249,6 +250,7 @@
     <None Include="App.OWASP.config">
       <DependentUpon>App.config</DependentUpon>
       <IsTransformFile>True</IsTransformFile>
+      <SubType>Designer</SubType>
     </None>
     <None Include="App.Release.config">
       <DependentUpon>App.config</DependentUpon>

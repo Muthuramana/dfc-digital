@@ -8,6 +8,8 @@
         /// </summary>
         public const string CustomWidgetSection = "DFC Widgets";
 
+        public const string CustomCoursesSection = "DFC Courses Widgets";
+
         /// <summary>
         /// The custom admin widget section
         /// </summary>
@@ -21,6 +23,11 @@
         public const string DefaultJobProfileUrlName = "DefaultJobProfileUrlName";
 
         public const string CustomReportsWidgetSection = "DFC Reports";
+
+        /// <summary>
+        /// Contact Adviser Widget section
+        /// </summary>
+        public const string ContactUsSection = "DFC Contact Us Widgets";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SitefinityConstants"/> class.
