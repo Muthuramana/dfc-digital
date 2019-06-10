@@ -21,8 +21,11 @@ steps:
 - task: NuGetToolInstaller@0
 
 - task: NuGetRestore@1
+  displayName: 'NuGet restore'
   inputs:
-    nugetConfigPath: 'DFC.Digital/.nuget/NuGet.Config'
+    solution: DFC.Digital/DFC.Digital.sln
+    selectOrConfig: config
+    nugetConfigPath: DFC.Digital/.nuget/NuGet.Config
 
 - task: PowerShell@2
   inputs:
