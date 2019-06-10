@@ -5,9 +5,15 @@
 
 pool:
   vmImage: 'VS2017-Win2016'
+  demands:
+    - DotNetFramework
+    - msbuild
+    - visualstudio
+    - vstest
+    - java
 
 variables:
-  solution: '**/*.sln'
+  solution: 'DFC.Digital/DFC.Digital.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
@@ -19,7 +25,28 @@ steps:
     command: restore
     restoreSolution: '$(solution)'
     feedsToUse: config
-    nugetConfigPath: '**/NuGet.Config'
+    nugetConfigPath: 'DFC.Digital/.nuget/NuGet.Config'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: 'cd $Env:BUILD_SOURCESDIRECTORY
+      Get-ChildItem -Filter "*.config.template" -Recurse | Rename-Item -NewName {$_.name -replace ''.config.template'',''.config'' }'
+
+- task: VSBuild@1
+  displayName: 'Build solution DFC.Digital/Seleno.BrowserStack.SpecFlowPlugin.sln'
+  inputs:
+    solution: DFC.Digital/Seleno.BrowserStack.SpecFlowPlugin.sln
+    platform: 'Any CPU'
+    configuration: Release
+
+- task: SonarCloudPrepare@1
+  inputs:
+    SonarCloud: '$(SonarCloud)'
+    organization: 'muthuramana-github'
+    scannerMode: 'MSBuild'
+    projectKey: '$(SonarCloudKey)'
+    projectName: 'mk-dfc-digital'
 
 - task: VSBuild@1
   inputs:
@@ -28,7 +55,13 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
+
 - task: VSTest@2
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+- task: SonarCloudAnalyze@1
+- task: SonarCloudPublish@1
+  inputs:
+    pollingTimeoutSec: '300'
