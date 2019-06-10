@@ -20,10 +20,8 @@ variables:
 steps:
 - task: NuGetToolInstaller@0
 
-- task: NuGetCommand@2
+- task: NuGetRestore@1
   inputs:
-    command: restore
-    feedsToUse: config
     nugetConfigPath: 'DFC.Digital/.nuget/NuGet.Config'
 
 - task: PowerShell@2
