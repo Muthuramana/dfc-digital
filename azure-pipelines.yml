@@ -27,11 +27,13 @@ steps:
     selectOrConfig: config
     nugetConfigPath: DFC.Digital/.nuget/NuGet.Config
 
-- task: PowerShell@2
+- task: PowerShell@1
+  displayName: 'Rename Config files'
   inputs:
-    targetType: 'inline'
-    script: 'cd $Env:BUILD_SOURCESDIRECTORY
-      Get-ChildItem -Filter "*.config.template" -Recurse | Rename-Item -NewName {$_.name -replace ''.config.template'',''.config'' }'
+    scriptType: inlineScript
+    inlineScript: |
+     cd $Env:BUILD_SOURCESDIRECTORY
+     Get-ChildItem -Filter "*.config.template" -Recurse | Rename-Item -NewName {$_.name -replace '.config.template','.config' }
 
 - task: VSBuild@1
   displayName: 'Build solution DFC.Digital/Seleno.BrowserStack.SpecFlowPlugin.sln'
