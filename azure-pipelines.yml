@@ -23,7 +23,6 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: restore
-    restoreSolution: '$(solution)'
     feedsToUse: config
     nugetConfigPath: 'DFC.Digital/.nuget/NuGet.Config'
 
